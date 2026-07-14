@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.13.0 (2026-07-14)
+
+### Features
+
+- Add admin ranking-weights and feature-flags endpoints
+  ([#28](https://github.com/mks-zakaria/sehaty-api/pull/28),
+  [`1e84b15`](https://github.com/mks-zakaria/sehaty-api/commit/1e84b150fab451a20c70df7babba707516ba0024))
+
+
 ## v1.12.0 (2026-07-14)
 
 ### Features
