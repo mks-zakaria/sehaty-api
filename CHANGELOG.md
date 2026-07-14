@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.9.0 (2026-07-14)
+
+### Features
+
+- Add cash-billing endpoints (plans, subscription, cash payments, dunning)
+  ([#20](https://github.com/mks-zakaria/sehaty-api/pull/20),
+  [`130f94f`](https://github.com/mks-zakaria/sehaty-api/commit/130f94fc034b9a4f3756af8c62c94458fdb538a6))
+
+
 ## v1.8.0 (2026-07-14)
 
 ### Features
