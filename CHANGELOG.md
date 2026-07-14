@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.12.0 (2026-07-14)
+
+### Features
+
+- Add admin reporting endpoints + year-end CSV accounting export
+  ([#26](https://github.com/mks-zakaria/sehaty-api/pull/26),
+  [`2f5d601`](https://github.com/mks-zakaria/sehaty-api/commit/2f5d601aa9c6d86b42044c4b1ebac48ecc024770))
+
+
 ## v1.11.0 (2026-07-14)
 
 ### Features
