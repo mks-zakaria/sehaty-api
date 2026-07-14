@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.11.0 (2026-07-14)
+
+### Features
+
+- Add notifications endpoints (feed, unread count, mark read)
+  ([#24](https://github.com/mks-zakaria/sehaty-api/pull/24),
+  [`06830fb`](https://github.com/mks-zakaria/sehaty-api/commit/06830fbd5ed827a6b8bc8716bd7ee1982b485099))
+
+
 ## v1.10.0 (2026-07-14)
 
 ### Features
