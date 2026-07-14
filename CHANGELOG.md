@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.8.0 (2026-07-14)
+
+### Features
+
+- Add reviews API (create, reply, flag, public list, moderation)
+  ([#18](https://github.com/mks-zakaria/sehaty-api/pull/18),
+  [`0da8e64`](https://github.com/mks-zakaria/sehaty-api/commit/0da8e646401cf1c255b50106d77bb39a91a4e341))
+
+
 ## v1.7.0 (2026-07-14)
 
 ### Features
