@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.4.0 (2026-07-14)
+
+### Features
+
+- Add doctor search API (nearest by specialty, ranked)
+  ([#10](https://github.com/mks-zakaria/sehaty-api/pull/10),
+  [`f7c8241`](https://github.com/mks-zakaria/sehaty-api/commit/f7c8241355d88f6bd38a9f5b593dea1e41b4415f))
+
+
 ## v1.3.0 (2026-07-14)
 
 ### Features
