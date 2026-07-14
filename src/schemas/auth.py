@@ -8,7 +8,12 @@ from pydantic import BaseModel, ConfigDict
 
 
 class DoctorRegisterIn(BaseModel):
-    """Doctor self-registration: email + password credentials + licence."""
+    """Doctor self-registration: email + password credentials + licence.
+
+    ``referral_code`` is optional: when a referrer's code is supplied it links
+    the new doctor as a PENDING referral. An unknown/self/duplicate code is a
+    non-fatal no-op — registration always succeeds regardless.
+    """
 
     email: str
     password: str
@@ -16,6 +21,7 @@ class DoctorRegisterIn(BaseModel):
     slug: str
     license_no: str
     phone: str | None = None
+    referral_code: str | None = None
 
 
 class LoginIn(BaseModel):

@@ -8,6 +8,7 @@ import os
 
 from fastapi import APIRouter, Depends, Request, Response, status
 from sehaty.core.controllers.auth import AuthController
+from sehaty.core.controllers.referral import ReferralController
 from sehaty.db import User
 
 from deps import get_current_user
@@ -26,7 +27,12 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 @router.post("/doctor/register", response_model=MeOut, status_code=status.HTTP_201_CREATED)
 def register_doctor(body: DoctorRegisterIn) -> MeOut:
-    """Register a doctor (created unverified). Parse -> controller -> serialize."""
+    """Register a doctor (created unverified). Parse -> controller -> serialize.
+
+    An optional ``referral_code`` links the new doctor to a referrer as a
+    PENDING referral. Capture is non-fatal: an unknown/self/duplicate code
+    returns ``None`` from core and never fails registration.
+    """
     user = AuthController.register_doctor(
         email=body.email,
         password=body.password,
@@ -35,6 +41,8 @@ def register_doctor(body: DoctorRegisterIn) -> MeOut:
         license_no=body.license_no,
         phone=body.phone,
     )
+    if body.referral_code:
+        ReferralController.record_referral(body.referral_code, user.id)
     return MeOut.model_validate(user)
 
 
