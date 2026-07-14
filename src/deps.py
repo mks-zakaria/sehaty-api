@@ -1,0 +1,74 @@
+"""Auth dependencies for the API transport layer.
+
+Bearer-token authentication that reuses `sehaty.core` primitives:
+
+* `get_current_user` decodes the JWT with `security.decode_token` and loads the
+  active user via `AuthController.get_active_user`;
+* `require_roles` gates a route to one or more `UserRole`s;
+* `require_verified` gates a doctor route on `DoctorProfile.verification_status`
+  being `VERIFIED` (verification lives on the profile, never on `User`).
+
+Business logic stays in the controller; these are thin authorization guards.
+"""
+
+from collections.abc import Callable
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sehaty.core import security
+from sehaty.core.controllers.auth import AuthController
+from sehaty.core.db.session import get_session
+from sehaty.core.errors import SehatyForbiddenError
+from sehaty.db import DoctorProfile, User, UserRole, VerificationStatus
+from sqlalchemy import select
+
+# tokenUrl points at the password login so the OpenAPI "Authorize" flow works.
+_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+_UNAUTHORIZED = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="invalid or expired token",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
+
+def get_current_user(token: str = Depends(_oauth2_scheme)) -> User:
+    """Resolve the bearer token to an active `User` (401 on an invalid token)."""
+    claims = security.decode_token(token)
+    if claims is None or "sub" not in claims:
+        raise _UNAUTHORIZED
+    try:
+        user_id = int(claims["sub"])
+    except (TypeError, ValueError) as exc:
+        raise _UNAUTHORIZED from exc
+    # Raises SehatyForbiddenError (→ 403) if the account is missing/disabled.
+    return AuthController.get_active_user(user_id)
+
+
+def require_roles(*roles: UserRole) -> Callable[[User], User]:
+    """Build a dependency that admits only users holding one of ``roles``."""
+
+    def _guard(user: User = Depends(get_current_user)) -> User:
+        if user.role not in roles:
+            raise SehatyForbiddenError("insufficient role")
+        return user
+
+    return _guard
+
+
+_require_doctor = require_roles(UserRole.DOCTOR)
+
+
+def require_verified(user: User = Depends(_require_doctor)) -> User:
+    """Admit only a DOCTOR whose profile is ``VERIFIED``.
+
+    Verification is tracked on ``DoctorProfile.verification_status`` (a
+    column-only select avoids loading the PostGIS ``geopoint``).
+    """
+    with get_session() as session:
+        status = session.execute(
+            select(DoctorProfile.verification_status).where(DoctorProfile.user_id == user.id)
+        ).scalar_one_or_none()
+    if status != VerificationStatus.VERIFIED:
+        raise SehatyForbiddenError("doctor is not verified")
+    return user

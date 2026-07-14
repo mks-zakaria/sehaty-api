@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from sehaty.core.errors import SehatyError
 
 from core_config import settings
+from routers.auth import router as auth_router
 from routers.doctors import router as doctors_router
 
 app = FastAPI(
@@ -50,4 +51,5 @@ def ready() -> dict[str, str]:
     return {"status": "ready"}
 
 
+app.include_router(auth_router)
 app.include_router(doctors_router)
