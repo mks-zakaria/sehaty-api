@@ -8,20 +8,25 @@ models translate a `sehaty.core` view (a frozen dataclass) or a
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class DoctorOut(BaseModel):
-    """Public marketplace view of a verified doctor."""
+class DoctorSearchResultOut(BaseModel):
+    """One ranked hit of the nearest-by-specialty doctor search.
+
+    Mirrors `sehaty.core`'s `DoctorSearchResult` dataclass one-to-one: the geo
+    distance and blended `rank` are computed by the controller, never here.
+    """
 
     model_config = ConfigDict(from_attributes=True)
 
-    user_id: int
-    full_name: str
     slug: str
-    city: str | None = None
-    bio: str | None = None
+    full_name: str
     photo_url: str | None = None
-    address: str | None = None
-    consultation_fee: float | None = None
-    verification_status: str
+    city: str | None = None
+    distance_m: float
+    lat: float | None = None
+    lng: float | None = None
+    avg_stars: float
+    review_count: int
+    rank: float
 
 
 class DoctorProfileIn(BaseModel):

@@ -5,37 +5,41 @@ taxonomy) are mapped to HTTP by the global exception handler in `main`.
 """
 
 from fastapi import APIRouter, Depends, Query
+from sehaty.core.controllers.doctor_search import DoctorSearchController
 from sehaty.core.controllers.doctors import DoctorController
 from sehaty.db import User, UserRole
 
 from deps import require_roles
-from schemas.doctors import DoctorOut, DoctorProfileIn, DoctorPublicOut
+from schemas.doctors import DoctorProfileIn, DoctorPublicOut, DoctorSearchResultOut
 
 router = APIRouter(prefix="/api/v1/doctors", tags=["doctors"])
 
 _require_doctor = require_roles(UserRole.DOCTOR)
 
 
-@router.get("", response_model=list[DoctorOut])
+@router.get("", response_model=list[DoctorSearchResultOut])
 def search_doctors(
-    specialty: str | None = Query(default=None),
-    city: str | None = Query(default=None),
-    lat: float | None = Query(default=None),
-    lng: float | None = Query(default=None),
-    limit: int = Query(default=20),
-) -> list[DoctorOut]:
-    """Marketplace doctor search.
+    specialty: str = Query(..., description="Specialty slug to search within."),
+    lat: float = Query(..., description="Search origin latitude."),
+    lng: float = Query(..., description="Search origin longitude."),
+    radius_m: int = Query(default=10000, description="Search radius in metres."),
+    limit: int = Query(default=20, description="Maximum number of hits."),
+) -> list[DoctorSearchResultOut]:
+    """Public marketplace search: VERIFIED doctors of a specialty near a point.
 
-    `specialty`, `lat`, `lng` are accepted at the boundary for the geo/faceted
-    search the core will grow; today the controller filters by `city` (and a
-    free-text `query`). Parse -> controller -> serialize.
+    Returns hits ranked best-first (a weighted blend of rating + proximity),
+    ties broken by distance. `specialty`, `lat`, `lng` are required; a missing
+    one is a 422 from FastAPI, an out-of-range value a 400 from the controller's
+    SehatyValidationError. Parse -> ONE controller call -> serialize.
     """
-    profiles = DoctorController.search(
-        city=city,
-        query=specialty,
+    results = DoctorSearchController.search(
+        specialty_slug=specialty,
+        lat=lat,
+        lng=lng,
+        radius_m=radius_m,
         limit=limit,
     )
-    return [DoctorOut.model_validate(p) for p in profiles]
+    return [DoctorSearchResultOut.model_validate(r) for r in results]
 
 
 @router.put("/me/profile")

@@ -3,9 +3,10 @@
 Step 1: a doctor registers, logs in, and reads their own identity via /me.
 Step 2: an admin accredits that doctor -> the doctor is now verified.
 Step 3: the (verified) doctor sets their profile + location -> the public page
-        resolves by slug with the round-tripped coordinates. This slice needs
-        the real PostGIS ``geopoint`` column, so it takes the ``pg_*`` fixtures
-        and SKIPs when no database is reachable.
+        resolves by slug with the round-tripped coordinates, and a patient
+        searching that specialty near the doctor finds them in the ranked
+        results. This slice needs the real PostGIS ``geopoint`` column, so it
+        takes the ``pg_*`` fixtures and SKIPs when no database is reachable.
 Later slices append steps (appointments, prescriptions, ...).
 """
 
@@ -153,3 +154,15 @@ def test_flow_doctor_profile_public_page(
     assert abs(body["lat"] - lat) < 1e-6
     assert abs(body["lng"] - lng) < 1e-6
     assert {s["slug"] for s in body["specialties"]} == {"generalist"}
+
+    # A patient searches that specialty near the doctor -> finds them ranked.
+    search = pg_client.get(
+        "/api/v1/doctors",
+        params={"specialty": "generalist", "lat": lat, "lng": lng},
+    )
+    assert search.status_code == 200, search.text
+    hits = search.json()
+    assert slug in {h["slug"] for h in hits}
+    found = next(h for h in hits if h["slug"] == slug)
+    assert found["distance_m"] < 100  # the search origin is the doctor's point
+    assert "rank" in found
