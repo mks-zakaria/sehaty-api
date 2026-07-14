@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.7.0 (2026-07-14)
+
+### Features
+
+- Expose doctor id in public doctor endpoint
+  ([#16](https://github.com/mks-zakaria/sehaty-api/pull/16),
+  [`75d1754`](https://github.com/mks-zakaria/sehaty-api/commit/75d17546dc22f7123df54417aac8ae6335210b64))
+
+
 ## v1.6.0 (2026-07-14)
 
 ### Features
