@@ -16,11 +16,10 @@ from collections.abc import Callable
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sehaty.core import security
+from sehaty.core.controllers.admin import AdminController
 from sehaty.core.controllers.auth import AuthController
-from sehaty.core.db.session import get_session
 from sehaty.core.errors import SehatyForbiddenError
-from sehaty.db import DoctorProfile, User, UserRole, VerificationStatus
-from sqlalchemy import select
+from sehaty.db import User, UserRole
 
 # tokenUrl points at the password login so the OpenAPI "Authorize" flow works.
 _oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -62,13 +61,10 @@ _require_doctor = require_roles(UserRole.DOCTOR)
 def require_verified(user: User = Depends(_require_doctor)) -> User:
     """Admit only a DOCTOR whose profile is ``VERIFIED``.
 
-    Verification is tracked on ``DoctorProfile.verification_status`` (a
-    column-only select avoids loading the PostGIS ``geopoint``).
+    The verification rule lives in one place — ``AdminController`` — so this
+    guard stays a thin, DB-free authorization check (no SQLAlchemy in the deps
+    layer).
     """
-    with get_session() as session:
-        status = session.execute(
-            select(DoctorProfile.verification_status).where(DoctorProfile.user_id == user.id)
-        ).scalar_one_or_none()
-    if status != VerificationStatus.VERIFIED:
+    if not AdminController.is_doctor_verified(user.id):
         raise SehatyForbiddenError("doctor is not verified")
     return user
