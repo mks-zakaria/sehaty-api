@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.10.0 (2026-07-14)
+
+### Features
+
+- Add referral endpoints + capture referral code at doctor registration
+  ([#22](https://github.com/mks-zakaria/sehaty-api/pull/22),
+  [`7c43a82`](https://github.com/mks-zakaria/sehaty-api/commit/7c43a82d8f0ff450bd4331a23824e779a47a6987))
+
+
 ## v1.9.0 (2026-07-14)
 
 ### Features
