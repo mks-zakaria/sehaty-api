@@ -65,10 +65,14 @@ class DoctorPublicOut(BaseModel):
 
     Coordinates arrive as plain `lat`/`lng` floats (the raw PostGIS geography is
     never exposed); only VERIFIED doctors are ever serialized here.
+
+    `id` is the doctor's numeric id (their `user_id`) — the handle the booking
+    flow (`/dr/:slug` → `/book`) needs to POST an appointment by `doctor_id`.
     """
 
     model_config = ConfigDict(from_attributes=True)
 
+    id: int
     slug: str
     full_name: str
     bio: str | None = None

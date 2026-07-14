@@ -109,6 +109,9 @@ def test_doctor_profile_upsert_and_public_page(
     page = pg_client.get(f"/api/v1/doctors/{slug}")
     assert page.status_code == 200, page.text
     body = page.json()
+    # `id` mirrors core's `DoctorView.id` (the doctor's user id) — the handle
+    # the `/dr` → `/book` front flow POSTs an appointment with.
+    assert body["id"] == doctor_id
     assert body["slug"] == slug
     assert body["full_name"] == "Dr Geo Test"
     assert body["city"] == "Casablanca"
