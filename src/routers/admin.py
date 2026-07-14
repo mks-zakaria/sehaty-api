@@ -13,7 +13,7 @@ from sehaty.core.controllers.reviews import ReviewController
 from sehaty.db import User, UserRole
 
 from deps import require_roles
-from schemas.admin import PendingProfessionalOut
+from schemas.admin import AdminSubscriptionOut, AdminUserOut, PendingProfessionalOut
 from schemas.reviews import ReviewModerateIn, ReviewOut
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
@@ -54,6 +54,39 @@ def revoke_professional(
     """Revoke a doctor's accreditation. 404 if no such profile."""
     AdminController.revoke(admin.id, user_id)
     return {"ok": True}
+
+
+@router.get("/users", response_model=list[AdminUserOut])
+def list_users(
+    role: str | None = Query(default=None),
+    is_active: bool | None = Query(default=None),
+    limit: int = Query(default=100),
+    offset: int = Query(default=0),
+    _admin: User = Depends(_require_admin),
+) -> list[AdminUserOut]:
+    """List platform users for the admin Users page, newest first.
+
+    Optional ``role`` / ``is_active`` filters narrow the set. Parse ->
+    controller -> serialize.
+    """
+    users = AdminController.list_users(role=role, is_active=is_active, limit=limit, offset=offset)
+    return [AdminUserOut.model_validate(u) for u in users]
+
+
+@router.get("/subscriptions", response_model=list[AdminSubscriptionOut])
+def list_subscriptions(
+    status: str | None = Query(default=None),
+    limit: int = Query(default=100),
+    offset: int = Query(default=0),
+    _admin: User = Depends(_require_admin),
+) -> list[AdminSubscriptionOut]:
+    """List subscriptions for the admin Subscriptions page, newest first.
+
+    Optional ``status`` filter narrows the set. Parse -> controller ->
+    serialize.
+    """
+    subscriptions = AdminController.list_subscriptions(status=status, limit=limit, offset=offset)
+    return [AdminSubscriptionOut.model_validate(s) for s in subscriptions]
 
 
 @router.get("/reviews", response_model=list[ReviewOut])
