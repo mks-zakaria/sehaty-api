@@ -24,11 +24,16 @@ from sehaty.db import (
     Appointment,
     AuditLog,
     Availability,
+    CreditLedger,
     DoctorProfile,
+    Invoice,
+    Payment,
     PhoneOtp,
+    Plan,
     RefreshToken,
     ReputationScore,
     Review,
+    Subscription,
     User,
 )
 from sehaty.db.base import SehatyBase
@@ -62,6 +67,11 @@ _TABLES = [
     Appointment.__table__,
     Review.__table__,
     ReputationScore.__table__,
+    Plan.__table__,
+    Subscription.__table__,
+    Invoice.__table__,
+    Payment.__table__,
+    CreditLedger.__table__,
 ]
 
 
