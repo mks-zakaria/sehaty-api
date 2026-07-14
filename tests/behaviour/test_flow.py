@@ -241,6 +241,14 @@ def test_flow_booking(client: TestClient, db: sessionmaker[Session]) -> None:
     slot_start = slot_start_dt.isoformat()
     assert slot_start_dt in {datetime.fromisoformat(s["start_at"]) for s in slots.json()}
 
+    # The slug-keyed public route (verified doctor) returns the same slots.
+    slug_slots = client.get(
+        "/api/v1/doctors/dr-flow-four/slots",
+        params={"from": target_day.isoformat(), "to": target_day.isoformat()},
+    )
+    assert slug_slots.status_code == 200, slug_slots.text
+    assert {s["start_at"] for s in slug_slots.json()} == {s["start_at"] for s in slots.json()}
+
     # A patient books that slot.
     with db() as session:
         patient = User(

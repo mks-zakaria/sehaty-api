@@ -1,13 +1,25 @@
 """Doctors router. Body of each handler: parse -> ONE controller call -> return.
 
 Business errors raised by the controller (the SehatyError taxonomy) are mapped
-to HTTP by the global exception handler in `main`. The public slots endpoint is
-the one exception to "no SQLAlchemy": there is no slot controller in the (already
-merged) core, so it opens a core-managed read session and delegates to the
-`available_slots` service — no ad-hoc queries or models are built here. It is
-keyed by the doctor's numeric user id because the only slug->doctor lookup,
-`DoctorController.get_by_slug`, neither exposes the user id nor runs off PostGIS
-(see the PR body); resolving by slug cleanly would need a core change we avoid.
+to HTTP by the global exception handler in `main`.
+
+Two public free-slot listings coexist, disambiguated by a Starlette path
+converter so they never collide on ``/{x}/slots``:
+
+* ``GET /{slug}/slots`` — the public, slug-keyed endpoint. It delegates to
+  ``DoctorController.get_public_slots``, which resolves the slug to a VERIFIED
+  doctor (404 otherwise, mirroring ``GET /{slug}``) and expands availability
+  without ever loading the PostGIS ``geopoint``. This is the canonical public
+  route.
+* ``GET /{doctor_id:int}/slots`` — the pre-existing numeric-id route, kept for
+  its current consumers (the booking flow / behaviour suite). It has no
+  verification gate and opens a core-managed read session to the
+  ``available_slots`` service directly — the one exception to "no SQLAlchemy",
+  as there is still no slot controller for id-keyed lookups.
+
+The ``:int`` converter (regex ``[0-9]+``) makes the numeric route match only
+all-digit segments; every other segment (a slug) falls through to the string
+route. The numeric route is declared first so a digits-only path binds to it.
 """
 
 from datetime import date
@@ -76,7 +88,7 @@ def get_doctor(slug: str) -> DoctorPublicOut:
     return DoctorPublicOut.model_validate(view)
 
 
-@router.get("/{doctor_id}/slots", response_model=list[SlotOut])
+@router.get("/{doctor_id:int}/slots", response_model=list[SlotOut])
 def get_doctor_slots(
     doctor_id: int,
     from_date: date = Query(alias="from", description="First day of the range (inclusive)."),
@@ -84,9 +96,29 @@ def get_doctor_slots(
 ) -> list[SlotOut]:
     """Public free-slot listing for a doctor across ``[from, to]`` (capped at 31d).
 
-    Keyed by the doctor's numeric user id (see the module docstring). Expands the
-    doctor's weekly availability into concrete UTC slots minus active bookings.
+    Keyed by the doctor's numeric user id (see the module docstring); no
+    verification gate. Expands the doctor's weekly availability into concrete UTC
+    slots minus active bookings. The ``:int`` converter keeps this route from
+    shadowing the slug-keyed one below.
     """
     with get_session() as session:
         slots = available_slots(session, doctor_id, from_date, to_date)
     return [SlotOut(start_at=start, end_at=end) for start, end in slots]
+
+
+@router.get("/{slug}/slots", response_model=list[SlotOut])
+def get_doctor_slots_by_slug(
+    slug: str,
+    from_date: date = Query(alias="from", description="First day of the range (inclusive)."),
+    to_date: date = Query(alias="to", description="Last day of the range (inclusive)."),
+) -> list[SlotOut]:
+    """Public free-slot listing for a VERIFIED doctor, keyed by their slug.
+
+    Delegates to ``DoctorController.get_public_slots``, which 404s (via the
+    SehatyError handler) when the slug is unknown or the doctor is not VERIFIED —
+    unverified profiles are not leaked — and otherwise expands the weekly
+    availability into concrete UTC ``{start_at, end_at}`` slots minus active
+    bookings across ``[from, to]``.
+    """
+    slots = DoctorController.get_public_slots(slug, from_date, to_date)
+    return [SlotOut.model_validate(slot) for slot in slots]
