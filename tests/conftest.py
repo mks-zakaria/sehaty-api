@@ -28,6 +28,7 @@ from sehaty.db import (
     CreditLedger,
     DoctorProfile,
     Invoice,
+    Notification,
     Payment,
     PhoneOtp,
     Plan,
@@ -76,6 +77,7 @@ _TABLES = [
     CreditLedger.__table__,
     Referral.__table__,
     AdminConfig.__table__,
+    Notification.__table__,
 ]
 
 

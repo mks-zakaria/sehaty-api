@@ -18,6 +18,7 @@ from routers.auth import router as auth_router
 from routers.availability import router as availability_router
 from routers.billing import router as billing_router
 from routers.doctors import router as doctors_router
+from routers.notifications import router as notifications_router
 from routers.referrals import router as referrals_router
 from routers.reviews import router as reviews_router
 from routers.specialties import router as specialties_router
@@ -67,3 +68,4 @@ app.include_router(reviews_router)
 app.include_router(admin_router)
 app.include_router(billing_router)
 app.include_router(referrals_router)
+app.include_router(notifications_router)
