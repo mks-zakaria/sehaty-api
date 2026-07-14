@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.5.0 (2026-07-14)
+
+### Features
+
+- Add booking API (availability, slots, appointments)
+  ([#12](https://github.com/mks-zakaria/sehaty-api/pull/12),
+  [`2e3421e`](https://github.com/mks-zakaria/sehaty-api/commit/2e3421e3884e4e3c69c5c59990095ffc5d2f3b7e))
+
+
 ## v1.4.0 (2026-07-14)
 
 ### Features
