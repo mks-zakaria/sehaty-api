@@ -27,11 +27,13 @@ from sehaty.db import (
     Availability,
     CreditLedger,
     DoctorProfile,
+    FeatureFlag,
     Invoice,
     Notification,
     Payment,
     PhoneOtp,
     Plan,
+    RankingWeights,
     Referral,
     RefreshToken,
     ReputationScore,
@@ -78,6 +80,8 @@ _TABLES = [
     Referral.__table__,
     AdminConfig.__table__,
     Notification.__table__,
+    RankingWeights.__table__,
+    FeatureFlag.__table__,
 ]
 
 
