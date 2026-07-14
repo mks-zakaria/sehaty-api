@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.3.0 (2026-07-14)
+
+### Features
+
+- Add doctor profile API (upsert, public page, specialties)
+  ([#8](https://github.com/mks-zakaria/sehaty-api/pull/8),
+  [`9321194`](https://github.com/mks-zakaria/sehaty-api/commit/9321194f70d6355d8cc194f35140e00bbfce2574))
+
+
 ## v1.2.0 (2026-07-14)
 
 ### Features
