@@ -18,7 +18,7 @@ from fastapi.testclient import TestClient
 from geoalchemy2 import Geography
 from geoalchemy2 import functions as geo_functions
 from sehaty.core.db import session as session_mod
-from sehaty.db import DoctorProfile, PhoneOtp, RefreshToken, User
+from sehaty.db import AuditLog, DoctorProfile, PhoneOtp, RefreshToken, User
 from sehaty.db.base import SehatyBase
 from sqlalchemy import create_engine
 from sqlalchemy.ext.compiler import compiles
@@ -45,6 +45,7 @@ _TABLES = [
     RefreshToken.__table__,
     PhoneOtp.__table__,
     DoctorProfile.__table__,
+    AuditLog.__table__,
 ]
 
 
