@@ -1,0 +1,12 @@
+# Copy to .env and adjust. Read by pydantic-settings (src/core_config.py).
+
+# Datastore consumed by sehaty.core services (get_session reads DATABASE_URL).
+DATABASE_URL=postgresql+psycopg://sehaty:sehaty@localhost:5432/sehaty
+
+# Auth
+JWT_SECRET=change-me-in-prod
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+# CORS — comma-separated origins, or "*" for any (dev).
+CORS_ORIGINS=*
