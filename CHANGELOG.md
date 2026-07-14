@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.6.0 (2026-07-14)
+
+### Features
+
+- Add slug-keyed public slots endpoint ([#14](https://github.com/mks-zakaria/sehaty-api/pull/14),
+  [`1dfa9c4`](https://github.com/mks-zakaria/sehaty-api/commit/1dfa9c47064fb421756b1b2591aed176d43177e1))
+
+
 ## v1.5.0 (2026-07-14)
 
 ### Features
