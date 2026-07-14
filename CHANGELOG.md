@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.14.0 (2026-07-14)
+
+### Features
+
+- Add admin users and subscriptions listing endpoints
+  ([#30](https://github.com/mks-zakaria/sehaty-api/pull/30),
+  [`73b3cc5`](https://github.com/mks-zakaria/sehaty-api/commit/73b3cc5205a6dead150a74e1b7170f5a5235239c))
+
+
 ## v1.13.0 (2026-07-14)
 
 ### Features
