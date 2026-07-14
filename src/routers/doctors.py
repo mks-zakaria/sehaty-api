@@ -27,6 +27,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, Query
 from sehaty.core.controllers.doctor_search import DoctorSearchController
 from sehaty.core.controllers.doctors import DoctorController
+from sehaty.core.controllers.reviews import ReviewController
 from sehaty.core.db.session import get_session
 from sehaty.core.services.slots import available_slots
 from sehaty.db import User, UserRole
@@ -34,6 +35,7 @@ from sehaty.db import User, UserRole
 from deps import require_roles
 from schemas.appointments import SlotOut
 from schemas.doctors import DoctorProfileIn, DoctorPublicOut, DoctorSearchResultOut
+from schemas.reviews import ReviewOut
 
 router = APIRouter(prefix="/api/v1/doctors", tags=["doctors"])
 
@@ -86,6 +88,21 @@ def get_doctor(slug: str) -> DoctorPublicOut:
     """
     view = DoctorController.get_by_slug(slug)
     return DoctorPublicOut.model_validate(view)
+
+
+@router.get("/{slug}/reviews", response_model=list[ReviewOut])
+def get_doctor_reviews(slug: str) -> list[ReviewOut]:
+    """Public listing of a doctor's PUBLISHED reviews, newest first.
+
+    Resolves the slug to a VERIFIED doctor's id via ``get_by_slug`` (404 via the
+    SehatyError handler when the slug is unknown or the doctor is not VERIFIED —
+    unverified profiles are not leaked), then returns their published reviews.
+    Only moderated (PUBLISHED) reviews are surfaced; PENDING/FLAGGED/REMOVED are
+    never public. Parse -> controller -> serialize.
+    """
+    doctor_id = DoctorController.get_by_slug(slug).id
+    reviews = ReviewController.list_published_for(doctor_id)
+    return [ReviewOut.model_validate(r) for r in reviews]
 
 
 @router.get("/{doctor_id:int}/slots", response_model=list[SlotOut])

@@ -17,6 +17,7 @@ from routers.appointments import router as appointments_router
 from routers.auth import router as auth_router
 from routers.availability import router as availability_router
 from routers.doctors import router as doctors_router
+from routers.reviews import router as reviews_router
 from routers.specialties import router as specialties_router
 
 app = FastAPI(
@@ -60,4 +61,5 @@ app.include_router(doctors_router)
 app.include_router(availability_router)
 app.include_router(appointments_router)
 app.include_router(specialties_router)
+app.include_router(reviews_router)
 app.include_router(admin_router)

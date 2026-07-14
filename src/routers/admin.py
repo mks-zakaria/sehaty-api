@@ -9,10 +9,12 @@ exception handler in ``main``.
 
 from fastapi import APIRouter, Depends, Query
 from sehaty.core.controllers.admin import AdminController
+from sehaty.core.controllers.reviews import ReviewController
 from sehaty.db import User, UserRole
 
 from deps import require_roles
 from schemas.admin import PendingProfessionalOut
+from schemas.reviews import ReviewModerateIn, ReviewOut
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
@@ -52,3 +54,23 @@ def revoke_professional(
     """Revoke a doctor's accreditation. 404 if no such profile."""
     AdminController.revoke(admin.id, user_id)
     return {"ok": True}
+
+
+@router.get("/reviews", response_model=list[ReviewOut])
+def list_review_queue(
+    _admin: User = Depends(_require_admin),
+) -> list[ReviewOut]:
+    """List every PENDING or FLAGGED review awaiting moderation, newest first."""
+    reviews = ReviewController.list_moderation_queue()
+    return [ReviewOut.model_validate(r) for r in reviews]
+
+
+@router.post("/reviews/{review_id}/moderate", response_model=ReviewOut)
+def moderate_review(
+    review_id: int,
+    body: ReviewModerateIn,
+    admin: User = Depends(_require_admin),
+) -> ReviewOut:
+    """Publish or remove a review, recomputing the target's reputation."""
+    review = ReviewController.moderate(admin.id, review_id, body.action)
+    return ReviewOut.model_validate(review)

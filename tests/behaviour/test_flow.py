@@ -11,6 +11,10 @@ Step 4: after registering + accrediting a doctor, the doctor sets a weekly
         availability window, a patient books one of the derived slots, and the
         doctor confirms it. Booking is non-geo, so this slice runs on the SQLite
         ``client``/``db`` fixtures (no PostGIS, no profile/geo needed).
+Step 5: the doctor completes that appointment, the patient leaves a review (it
+        lands PENDING and is invisible until moderated), an admin sees it in the
+        moderation queue and PUBLISHes it -> the review is published and the
+        doctor's reputation reflects it. Non-geo, so also on the SQLite fixtures.
 Later slices append steps (prescriptions, ...).
 """
 
@@ -19,8 +23,9 @@ from datetime import UTC, date, datetime, timedelta
 from fastapi.testclient import TestClient
 from sehaty.core import security
 from sehaty.core.controllers.admin import AdminController
+from sehaty.core.controllers.reviews import ReviewController
 from sehaty.core.controllers.specialties import SpecialtyController
-from sehaty.db import User, UserRole
+from sehaty.db import ReputationScore, User, UserRole
 from sqlalchemy.orm import Session, sessionmaker
 
 
@@ -277,3 +282,56 @@ def test_flow_booking(client: TestClient, db: sessionmaker[Session]) -> None:
     )
     assert confirm.status_code == 200, confirm.text
     assert confirm.json()["status"] == "CONFIRMED"
+
+    # Step 5 — the doctor completes the appointment; the patient reviews it
+    # (PENDING, invisible); an admin moderates it to PUBLISHED and the doctor's
+    # reputation reflects the rating.
+    complete = client.patch(
+        f"/api/v1/appointments/{appt_id}",
+        headers={"Authorization": f"Bearer {doctor_token}"},
+        json={"status": "COMPLETED"},
+    )
+    assert complete.status_code == 200, complete.text
+    assert complete.json()["status"] == "COMPLETED"
+
+    review = client.post(
+        "/api/v1/reviews",
+        headers={"Authorization": f"Bearer {patient_token}"},
+        json={
+            "appointment_id": appt_id,
+            "direction": "PATIENT_ON_DOCTOR",
+            "stars": 5,
+            "comment": "Very attentive",
+        },
+    )
+    assert review.status_code == 201, review.text
+    review_id = review.json()["id"]
+    assert review.json()["status"] == "PENDING"
+
+    # Invisible before moderation.
+    assert ReviewController.list_published_for(doctor_id) == []
+
+    # Admin sees it in the queue and publishes it.
+    queue = client.get(
+        "/api/v1/admin/reviews",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert queue.status_code == 200, queue.text
+    assert review_id in {r["id"] for r in queue.json()}
+
+    publish = client.post(
+        f"/api/v1/admin/reviews/{review_id}/moderate",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"action": "PUBLISH"},
+    )
+    assert publish.status_code == 200, publish.text
+    assert publish.json()["status"] == "PUBLISHED"
+
+    # Published now, and the doctor's reputation is updated.
+    published = ReviewController.list_published_for(doctor_id)
+    assert [r.id for r in published] == [review_id]
+    with db() as session:
+        score = session.get(ReputationScore, doctor_id)
+        assert score is not None
+        assert score.review_count == 1
+        assert score.avg_stars == 5.0

@@ -27,6 +27,8 @@ from sehaty.db import (
     DoctorProfile,
     PhoneOtp,
     RefreshToken,
+    ReputationScore,
+    Review,
     User,
 )
 from sehaty.db.base import SehatyBase
@@ -58,6 +60,8 @@ _TABLES = [
     AuditLog.__table__,
     Availability.__table__,
     Appointment.__table__,
+    Review.__table__,
+    ReputationScore.__table__,
 ]
 
 
