@@ -21,6 +21,7 @@ from geoalchemy2 import Geography
 from geoalchemy2 import functions as geo_functions
 from sehaty.core.db import session as session_mod
 from sehaty.db import (
+    AdminConfig,
     Appointment,
     AuditLog,
     Availability,
@@ -30,6 +31,7 @@ from sehaty.db import (
     Payment,
     PhoneOtp,
     Plan,
+    Referral,
     RefreshToken,
     ReputationScore,
     Review,
@@ -72,6 +74,8 @@ _TABLES = [
     Invoice.__table__,
     Payment.__table__,
     CreditLedger.__table__,
+    Referral.__table__,
+    AdminConfig.__table__,
 ]
 
 
