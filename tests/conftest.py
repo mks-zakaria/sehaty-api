@@ -11,6 +11,8 @@ pass-through) purely for the test engine — this mirrors sehaty-core's own
 without a database.
 """
 
+import os
+import subprocess
 from collections.abc import Iterator
 
 import pytest
@@ -20,7 +22,7 @@ from geoalchemy2 import functions as geo_functions
 from sehaty.core.db import session as session_mod
 from sehaty.db import AuditLog, DoctorProfile, PhoneOtp, RefreshToken, User
 from sehaty.db.base import SehatyBase
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -67,5 +69,69 @@ def db() -> Iterator[sessionmaker[Session]]:
 @pytest.fixture
 def client(db: sessionmaker[Session]) -> Iterator[TestClient]:
     """TestClient bound to the app with the in-memory DB active."""
+    with TestClient(app) as test_client:
+        yield test_client
+
+
+# --- PostGIS integration fixtures --------------------------------------------
+# The doctor-profile round-trip (WKTElement writes + ST_X/ST_Y reads on the
+# ``geopoint`` geography) cannot run on stock SQLite, so ``test_doctors_api.py``
+# uses a live PostGIS reachable at ``DATABASE_URL`` (defaulting to the local
+# Docker container) and SKIPs cleanly when none is available — mirroring
+# sehaty-core's own ``pg_session`` fixture.
+_DEFAULT_DATABASE_URL = "postgresql+psycopg://sehaty:sehaty@localhost:5432/sehaty"
+
+
+def _database_url() -> str:
+    return os.environ.get("DATABASE_URL", _DEFAULT_DATABASE_URL)
+
+
+@pytest.fixture(scope="session")
+def _pg_engine():  # type: ignore[no-untyped-def]
+    """Session-wide PostGIS engine; migrated once, or SKIP if unreachable."""
+    url = _database_url()
+    engine = create_engine(url, pool_pre_ping=True, future=True)
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception as exc:  # pragma: no cover - environment-dependent
+        pytest.skip(f"PostGIS not reachable at {url}: {exc}")
+
+    # Apply migrations once (idempotent). ``sehaty-migrate`` ships with the
+    # sehaty-db dependency and reads DATABASE_URL itself.
+    result = subprocess.run(
+        ["sehaty-migrate"],
+        env={**os.environ, "DATABASE_URL": url},
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:  # pragma: no cover - environment-dependent
+        pytest.skip(f"sehaty-migrate failed:\n{result.stdout}\n{result.stderr}")
+
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture
+def pg_db(_pg_engine) -> Iterator[sessionmaker[Session]]:  # type: ignore[no-untyped-def]
+    """PostGIS session factory wired into `sehaty.core`, blank per test.
+
+    Truncates the user/doctor/specialty tables (CASCADE) before each test so the
+    controllers — which open their own sessions via ``get_session()`` — see a
+    clean slate.
+    """
+    factory = sessionmaker(bind=_pg_engine, expire_on_commit=False)
+    with factory() as cleaner:
+        cleaner.execute(text("TRUNCATE users, specialties RESTART IDENTITY CASCADE"))
+        cleaner.commit()
+
+    session_mod.set_session_factory(factory)
+    yield factory
+    session_mod.set_session_factory(None)
+
+
+@pytest.fixture
+def pg_client(pg_db: sessionmaker[Session]) -> Iterator[TestClient]:
+    """TestClient bound to the app with the live PostGIS DB active."""
     with TestClient(app) as test_client:
         yield test_client
