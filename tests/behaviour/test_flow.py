@@ -7,8 +7,14 @@ Step 3: the (verified) doctor sets their profile + location -> the public page
         searching that specialty near the doctor finds them in the ranked
         results. This slice needs the real PostGIS ``geopoint`` column, so it
         takes the ``pg_*`` fixtures and SKIPs when no database is reachable.
-Later slices append steps (appointments, prescriptions, ...).
+Step 4: after registering + accrediting a doctor, the doctor sets a weekly
+        availability window, a patient books one of the derived slots, and the
+        doctor confirms it. Booking is non-geo, so this slice runs on the SQLite
+        ``client``/``db`` fixtures (no PostGIS, no profile/geo needed).
+Later slices append steps (prescriptions, ...).
 """
+
+from datetime import UTC, date, datetime, timedelta
 
 from fastapi.testclient import TestClient
 from sehaty.core import security
@@ -166,3 +172,100 @@ def test_flow_doctor_profile_public_page(
     found = next(h for h in hits if h["slug"] == slug)
     assert found["distance_m"] < 100  # the search origin is the doctor's point
     assert "rank" in found
+
+
+def test_flow_booking(client: TestClient, db: sessionmaker[Session]) -> None:
+    # Step 4 — register + accredit a doctor, who then opens a weekly
+    # availability window; a patient books a derived slot and the doctor
+    # confirms it. Non-geo, so this runs on the SQLite fixtures.
+    register = client.post(
+        "/api/v1/auth/doctor/register",
+        json={
+            "email": "flow-doc4@clinic.ma",
+            "password": "flow-pw-123",
+            "full_name": "Dr Flow Four",
+            "slug": "dr-flow-four",
+            "license_no": "LIC-FLOW-4",
+            "phone": "+212612345681",
+        },
+    )
+    assert register.status_code == 201, register.text
+    doctor_id = int(register.json()["id"])
+
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "flow-doc4@clinic.ma", "password": "flow-pw-123"},
+    )
+    assert login.status_code == 200, login.text
+    doctor_token = login.json()["access"]
+
+    # An admin accredits the doctor.
+    with db() as session:
+        admin = User(
+            email="flow-admin4@sehaty.ma",
+            role=UserRole.ADMIN,
+            is_active=True,
+            password_hash="unused",
+        )
+        session.add(admin)
+        session.commit()
+        admin_token = security.create_access_token(int(admin.id), UserRole.ADMIN)
+    accredit = client.post(
+        f"/api/v1/admin/professionals/{doctor_id}/accredit",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert accredit.status_code == 200, accredit.text
+    assert AdminController.is_doctor_verified(doctor_id) is True
+
+    # The doctor opens a weekly availability window.
+    target_day = date.today() + timedelta(days=5)
+    add = client.post(
+        "/api/v1/doctors/me/availability",
+        headers={"Authorization": f"Bearer {doctor_token}"},
+        json={
+            "weekday": target_day.weekday(),
+            "start_time": "10:00",
+            "end_time": "11:00",
+            "slot_minutes": 30,
+        },
+    )
+    assert add.status_code == 201, add.text
+
+    # The public slots endpoint expands the window.
+    slots = client.get(
+        f"/api/v1/doctors/{doctor_id}/slots",
+        params={"from": target_day.isoformat(), "to": target_day.isoformat()},
+    )
+    assert slots.status_code == 200, slots.text
+    slot_start_dt = datetime(target_day.year, target_day.month, target_day.day, 10, 0, tzinfo=UTC)
+    slot_start = slot_start_dt.isoformat()
+    assert slot_start_dt in {datetime.fromisoformat(s["start_at"]) for s in slots.json()}
+
+    # A patient books that slot.
+    with db() as session:
+        patient = User(
+            email="flow-patient4@sehaty.ma",
+            role=UserRole.PATIENT,
+            is_active=True,
+            password_hash="unused",
+        )
+        session.add(patient)
+        session.commit()
+        patient_token = security.create_access_token(int(patient.id), UserRole.PATIENT)
+    book = client.post(
+        "/api/v1/appointments",
+        headers={"Authorization": f"Bearer {patient_token}"},
+        json={"doctor_id": doctor_id, "start_at": slot_start, "reason": "First visit"},
+    )
+    assert book.status_code == 201, book.text
+    appt_id = book.json()["id"]
+    assert book.json()["status"] == "REQUESTED"
+
+    # The doctor confirms the appointment.
+    confirm = client.patch(
+        f"/api/v1/appointments/{appt_id}",
+        headers={"Authorization": f"Bearer {doctor_token}"},
+        json={"status": "CONFIRMED"},
+    )
+    assert confirm.status_code == 200, confirm.text
+    assert confirm.json()["status"] == "CONFIRMED"
