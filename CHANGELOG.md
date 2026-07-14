@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.2.0 (2026-07-14)
+
+### Features
+
+- Add accreditation API (admin accredit/revoke/list)
+  ([#6](https://github.com/mks-zakaria/sehaty-api/pull/6),
+  [`0cd3ceb`](https://github.com/mks-zakaria/sehaty-api/commit/0cd3ceb08cc50d93422e0a88f4b1389cf167bc38))
+
+
 ## v1.1.0 (2026-07-14)
 
 ### Features
