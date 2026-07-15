@@ -27,19 +27,25 @@ from sehaty.db import (
     Availability,
     ClinicPatient,
     CreditLedger,
+    Diagnosis,
     DoctorProfile,
     FeatureFlag,
     Invoice,
+    Medication,
     Notification,
     Payment,
     PhoneOtp,
     Plan,
+    PracticeProfile,
+    Prescription,
+    PrescriptionItem,
     RankingWeights,
     Referral,
     RefreshToken,
     ReputationScore,
     Review,
     Subscription,
+    TreatmentFeedback,
     User,
 )
 from sehaty.db.base import SehatyBase
@@ -84,6 +90,12 @@ _TABLES = [
     Notification.__table__,
     RankingWeights.__table__,
     FeatureFlag.__table__,
+    PracticeProfile.__table__,
+    Medication.__table__,
+    Prescription.__table__,
+    PrescriptionItem.__table__,
+    Diagnosis.__table__,
+    TreatmentFeedback.__table__,
 ]
 
 
