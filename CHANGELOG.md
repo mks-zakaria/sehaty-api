@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.15.0 (2026-07-15)
+
+### Features
+
+- Add doctor patient-register endpoints (list, detail+history, add walk-in, update)
+  ([#32](https://github.com/mks-zakaria/sehaty-api/pull/32),
+  [`f61c68b`](https://github.com/mks-zakaria/sehaty-api/commit/f61c68bf00ade43b6d627dbc47be217718ba0b0b))
+
+
 ## v1.14.0 (2026-07-14)
 
 ### Features
