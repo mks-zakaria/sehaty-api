@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.18.0 (2026-07-15)
+
+### Features
+
+- Add doctor/assistant appointment grid + confirm-on-behalf endpoints
+  ([#38](https://github.com/mks-zakaria/sehaty-api/pull/38),
+  [`6d8eef6`](https://github.com/mks-zakaria/sehaty-api/commit/6d8eef6988362490ee1723ddeb690cc59cb0ac93))
+
+
 ## v1.17.0 (2026-07-15)
 
 ### Features
