@@ -20,6 +20,7 @@ from routers.availability import router as availability_router
 from routers.billing import router as billing_router
 from routers.config import router as config_router
 from routers.diagnoses import router as diagnoses_router
+from routers.doctor_appointments import router as doctor_appointments_router
 from routers.doctors import router as doctors_router
 from routers.feedback import router as feedback_router
 from routers.notifications import router as notifications_router
@@ -85,3 +86,4 @@ app.include_router(prescriptions_router)
 app.include_router(diagnoses_router)
 app.include_router(feedback_router)
 app.include_router(assistants_router)
+app.include_router(doctor_appointments_router)
