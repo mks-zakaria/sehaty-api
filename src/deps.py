@@ -13,10 +13,11 @@ Business logic stays in the controller; these are thin authorization guards.
 
 from collections.abc import Callable
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer
 from sehaty.core import security
 from sehaty.core.controllers.admin import AdminController
+from sehaty.core.controllers.assistants import AssistantController
 from sehaty.core.controllers.auth import AuthController
 from sehaty.core.errors import SehatyForbiddenError
 from sehaty.db import User, UserRole
@@ -68,3 +69,20 @@ def require_verified(user: User = Depends(_require_doctor)) -> User:
     if not AdminController.is_doctor_verified(user.id):
         raise SehatyForbiddenError("doctor is not verified")
     return user
+
+
+def get_acting_doctor_id(
+    doctor_id: int | None = Query(default=None),
+    user: User = Depends(get_current_user),
+) -> int:
+    """Resolve the effective ``doctor_id`` whose workspace the caller acts on.
+
+    A DOCTOR gets their own id; an ASSISTANT gets the linked doctor's id (an
+    optional ``doctor_id`` query param disambiguates when the assistant serves
+    several doctors). The single resolution rule lives in
+    ``AssistantController.resolve_doctor_id`` — any Forbidden/Validation it
+    raises is mapped to HTTP by the global handler in ``main``. Other routers
+    (booking/confirm) reuse this dependency so an assistant can drive the
+    existing doctor-scoped controllers with the resolved id.
+    """
+    return AssistantController.resolve_doctor_id(user.id, user.role, requested_doctor_id=doctor_id)
