@@ -74,6 +74,7 @@ class PatientAppointmentOut(BaseModel):
     id: int
     doctor_id: int
     doctor_name: str
+    doctor_slug: str | None = None
     start_at: datetime
     end_at: datetime
     status: AppointmentStatus
