@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.17.0 (2026-07-15)
+
+### Features
+
+- Add assistant management endpoints and acting-doctor dependency
+  ([#36](https://github.com/mks-zakaria/sehaty-api/pull/36),
+  [`b4acac9`](https://github.com/mks-zakaria/sehaty-api/commit/b4acac981b641ec105c494c9d7d1f4f2a082ee8f))
+
+
 ## v1.16.0 (2026-07-15)
 
 ### Features
