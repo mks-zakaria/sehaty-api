@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.26.0 (2026-07-15)
+
+### Features
+
+- Expose doctor slug in assistant's doctor list
+  ([#54](https://github.com/mks-zakaria/sehaty-api/pull/54),
+  [`725f65c`](https://github.com/mks-zakaria/sehaty-api/commit/725f65c917681b787ead5a9049e5853dba80e984))
+
+
 ## v1.25.0 (2026-07-15)
 
 ### Features
