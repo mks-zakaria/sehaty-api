@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.25.0 (2026-07-15)
+
+### Features
+
+- Add prescription-template endpoints (list, create, delete)
+  ([#52](https://github.com/mks-zakaria/sehaty-api/pull/52),
+  [`c0abc5f`](https://github.com/mks-zakaria/sehaty-api/commit/c0abc5f081b8023989bd1ac32d98e1ec2fa9185e))
+
+
 ## v1.24.0 (2026-07-15)
 
 ### Features
