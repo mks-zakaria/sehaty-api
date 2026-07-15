@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.23.0 (2026-07-15)
+
+### Features
+
+- Add admin run-reminders endpoint (cron-triggerable appointment reminders)
+  ([#48](https://github.com/mks-zakaria/sehaty-api/pull/48),
+  [`728cc9f`](https://github.com/mks-zakaria/sehaty-api/commit/728cc9f1a03228bbdc9e9ad395fe6632d6cec5e7))
+
+
 ## v1.22.0 (2026-07-15)
 
 ### Features
