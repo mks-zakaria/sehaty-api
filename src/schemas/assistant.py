@@ -48,3 +48,4 @@ class DoctorRefOut(BaseModel):
 
     doctor_id: int
     full_name: str | None = None
+    slug: str | None = None
