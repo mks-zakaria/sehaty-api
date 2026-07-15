@@ -27,6 +27,7 @@ from routers.feedback import router as feedback_router
 from routers.notifications import router as notifications_router
 from routers.patients import router as patients_router
 from routers.practice import router as practice_router
+from routers.prescription_templates import router as prescription_templates_router
 from routers.prescriptions import router as prescriptions_router
 from routers.referrals import router as referrals_router
 from routers.reports import router as reports_router
@@ -85,6 +86,7 @@ app.include_router(reports_router)
 app.include_router(config_router)
 app.include_router(practice_router)
 app.include_router(prescriptions_router)
+app.include_router(prescription_templates_router)
 app.include_router(diagnoses_router)
 app.include_router(feedback_router)
 app.include_router(assistants_router)
