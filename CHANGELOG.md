@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.16.0 (2026-07-15)
+
+### Features
+
+- Add clinical API (practice profiles, prescriptions, diagnoses, patient feedback)
+  ([#34](https://github.com/mks-zakaria/sehaty-api/pull/34),
+  [`fad7953`](https://github.com/mks-zakaria/sehaty-api/commit/fad79533e8873d3d805d03d3415154c33dc3ae16))
+
+
 ## v1.15.0 (2026-07-15)
 
 ### Features
