@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.19.0 (2026-07-15)
+
+### Features
+
+- Add doctor name to patient appointments + patient prescription detail endpoint
+  ([#40](https://github.com/mks-zakaria/sehaty-api/pull/40),
+  [`5f08f3c`](https://github.com/mks-zakaria/sehaty-api/commit/5f08f3ceb86e6a9b5f4325b11aea6ecce764d322))
+
+
 ## v1.18.0 (2026-07-15)
 
 ### Features
