@@ -17,7 +17,7 @@ from sehaty.core.controllers.appointments import AppointmentController
 from sehaty.db import UserRole
 
 from deps import get_acting_doctor_id
-from schemas.appointments import AppointmentOut
+from schemas.appointments import AppointmentOut, RescheduleIn
 from schemas.doctor_appointment import AppointmentGridOut, AppointmentTransitionIn
 
 router = APIRouter(prefix="/api/v1/doctor/appointments", tags=["doctor-appointments"])
@@ -46,6 +46,28 @@ def transition_doctor_appointment(
         role=UserRole.DOCTOR,
         appointment_id=appointment_id,
         new_status=body.status,
+        notes=body.notes,
+    )
+    return AppointmentOut.model_validate(appt)
+
+
+@router.post("/{appointment_id}/reschedule", response_model=AppointmentOut)
+def reschedule_doctor_appointment(
+    appointment_id: int,
+    body: RescheduleIn,
+    acting_doctor_id: int = Depends(get_acting_doctor_id),
+) -> AppointmentOut:
+    """Move an appointment to a different free slot on the doctor's behalf.
+
+    Resolves the effective doctor via ``get_acting_doctor_id`` (a linked
+    assistant reschedules for their doctor); a DOCTOR move preserves the current
+    status. Unavailable/invalid slots are 409, an unauthorized caller is 403.
+    """
+    appt = AppointmentController.reschedule(
+        user_id=acting_doctor_id,
+        role=UserRole.DOCTOR,
+        appointment_id=appointment_id,
+        new_start_at=body.new_start_at,
         notes=body.notes,
     )
     return AppointmentOut.model_validate(appt)
