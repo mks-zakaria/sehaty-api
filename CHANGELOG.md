@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.21.0 (2026-07-15)
+
+### Features
+
+- Add patient and doctor/assistant appointment reschedule endpoints
+  ([#44](https://github.com/mks-zakaria/sehaty-api/pull/44),
+  [`cebe723`](https://github.com/mks-zakaria/sehaty-api/commit/cebe723b3c0f6ea1a9d41014b01c1978e70001fb))
+
+
 ## v1.20.0 (2026-07-15)
 
 ### Features
