@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.22.0 (2026-07-15)
+
+### Features
+
+- Expose doctor_slug on patient appointments
+  ([#46](https://github.com/mks-zakaria/sehaty-api/pull/46),
+  [`f596bef`](https://github.com/mks-zakaria/sehaty-api/commit/f596bef6778996ea87f1670375fbd039996c6cb6))
+
+
 ## v1.21.0 (2026-07-15)
 
 ### Features
