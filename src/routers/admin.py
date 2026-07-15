@@ -9,6 +9,7 @@ exception handler in ``main``.
 
 from fastapi import APIRouter, Depends, Query
 from sehaty.core.controllers.admin import AdminController
+from sehaty.core.controllers.appointments import AppointmentController
 from sehaty.core.controllers.reviews import ReviewController
 from sehaty.db import User, UserRole
 
@@ -19,6 +20,17 @@ from schemas.reviews import ReviewModerateIn, ReviewOut
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 _require_admin = require_roles(UserRole.ADMIN)
+
+
+@router.post("/run-reminders")
+def run_reminders(
+    within_hours: int = Query(24, ge=1, le=168),
+    _admin: User = Depends(_require_admin),
+) -> dict[str, int]:
+    """Send one-time patient reminders for CONFIRMED appointments starting within
+    ``within_hours``. Idempotent (each appointment is reminded once) — meant to be
+    triggered periodically by a scheduler/cron."""
+    return {"reminded": AppointmentController.run_reminders(within_hours=within_hours)}
 
 
 @router.get("/professionals", response_model=list[PendingProfessionalOut])
