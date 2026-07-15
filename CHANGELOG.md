@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.20.0 (2026-07-15)
+
+### Features
+
+- Add availability-exceptions endpoints and timezone in doctor profile
+  ([#42](https://github.com/mks-zakaria/sehaty-api/pull/42),
+  [`e22d638`](https://github.com/mks-zakaria/sehaty-api/commit/e22d638211298ecb3b1ddb13db2a1cd3d10c4b94))
+
+
 ## v1.19.0 (2026-07-15)
 
 ### Features
