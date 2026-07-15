@@ -5,12 +5,20 @@ windows from which bookable slots are derived. Business errors (the SehatyError
 taxonomy) are mapped to HTTP by the global exception handler in `main`.
 """
 
-from fastapi import APIRouter, Depends, Response, status
+from datetime import date
+
+from fastapi import APIRouter, Depends, Query, Response, status
 from sehaty.core.controllers.availability import AvailabilityController
+from sehaty.core.controllers.availability_exceptions import AvailabilityExceptionController
 from sehaty.db import User, UserRole
 
 from deps import require_roles
-from schemas.availability import AvailabilityIn, AvailabilityOut
+from schemas.availability import (
+    AvailabilityExceptionIn,
+    AvailabilityExceptionOut,
+    AvailabilityIn,
+    AvailabilityOut,
+)
 
 router = APIRouter(prefix="/api/v1/doctors/me/availability", tags=["availability"])
 
@@ -46,4 +54,50 @@ def delete_availability(
 ) -> Response:
     """Delete one of the calling doctor's availability windows (ownership-checked)."""
     AvailabilityController.delete(user.id, availability_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/exceptions", response_model=list[AvailabilityExceptionOut])
+def list_exceptions(
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+    user: User = Depends(_require_doctor),
+) -> list[AvailabilityExceptionOut]:
+    """List the calling doctor's date-specific availability exceptions.
+
+    ``date_from`` / ``date_to`` (inclusive) narrow the range when supplied.
+    """
+    rows = AvailabilityExceptionController.list(user.id, date_from=date_from, date_to=date_to)
+    return [AvailabilityExceptionOut.model_validate(r) for r in rows]
+
+
+@router.post(
+    "/exceptions",
+    response_model=AvailabilityExceptionOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_exception(
+    body: AvailabilityExceptionIn,
+    user: User = Depends(_require_doctor),
+) -> AvailabilityExceptionOut:
+    """Add a date-specific BLOCK/OPEN exception for the calling doctor."""
+    row = AvailabilityExceptionController.add(
+        user.id,
+        body.date,
+        body.kind,
+        start_time=body.start_time,
+        end_time=body.end_time,
+        slot_minutes=body.slot_minutes,
+        reason=body.reason,
+    )
+    return AvailabilityExceptionOut.model_validate(row)
+
+
+@router.delete("/exceptions/{exception_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_exception(
+    exception_id: int,
+    user: User = Depends(_require_doctor),
+) -> Response:
+    """Delete one of the calling doctor's exceptions (ownership-checked)."""
+    AvailabilityExceptionController.delete(user.id, exception_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
