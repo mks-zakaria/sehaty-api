@@ -10,7 +10,12 @@ from sehaty.core.controllers.appointments import AppointmentController
 from sehaty.db import User, UserRole
 
 from deps import get_current_user, require_roles
-from schemas.appointments import AppointmentIn, AppointmentOut, AppointmentTransitionIn
+from schemas.appointments import (
+    AppointmentIn,
+    AppointmentOut,
+    AppointmentTransitionIn,
+    PatientAppointmentOut,
+)
 
 router = APIRouter(prefix="/api/v1/appointments", tags=["appointments"])
 
@@ -27,9 +32,19 @@ def book_appointment(
     return AppointmentOut.model_validate(appt)
 
 
-@router.get("", response_model=list[AppointmentOut])
-def list_appointments(user: User = Depends(get_current_user)) -> list[AppointmentOut]:
-    """List the caller's appointments (patient: booked; doctor: on their calendar)."""
+@router.get("", response_model=list[PatientAppointmentOut | AppointmentOut])
+def list_appointments(
+    user: User = Depends(get_current_user),
+) -> list[PatientAppointmentOut] | list[AppointmentOut]:
+    """List the caller's appointments (patient: booked; doctor: on their calendar).
+
+    A PATIENT gets the enriched view carrying the resolved ``doctor_name`` (the
+    ``PatientAppointmentRow`` projection); every other role keeps the plain
+    ``AppointmentOut`` (with ``patient_id``/``doctor_id``) as before.
+    """
+    if user.role == UserRole.PATIENT:
+        rows = AppointmentController.list_for_patient_view(user.id)
+        return [PatientAppointmentOut.model_validate(r) for r in rows]
     appts = AppointmentController.list_for(user.id, user.role)
     return [AppointmentOut.model_validate(a) for a in appts]
 

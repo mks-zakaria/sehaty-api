@@ -12,7 +12,7 @@ from datetime import UTC, date, datetime, timedelta
 
 from fastapi.testclient import TestClient
 from sehaty.core import security
-from sehaty.db import User, UserRole
+from sehaty.db import Appointment, AppointmentStatus, User, UserRole
 from sqlalchemy.orm import Session, sessionmaker
 
 # A fixed future date well clear of "today" so the slot always lands in range.
@@ -127,10 +127,13 @@ def test_booking_end_to_end(client: TestClient, db: sessionmaker[Session]) -> No
     )
     assert _SLOT_START not in {datetime.fromisoformat(s["start_at"]) for s in slots_after.json()}
 
-    # Patient lists their appointment.
+    # Patient lists their appointment; the row carries the doctor's profile name.
     mine = client.get("/api/v1/appointments", headers=_auth(patient_token))
     assert mine.status_code == 200, mine.text
     assert [a["id"] for a in mine.json()] == [appt_id]
+    assert mine.json()[0]["doctor_id"] == doctor_id
+    assert mine.json()[0]["doctor_name"] == "Dr Book 1"
+    assert "patient_id" not in mine.json()[0]
 
     # Doctor sees it on their calendar and confirms, then completes.
     doc_list = client.get("/api/v1/appointments", headers=_auth(doctor_token))
@@ -166,6 +169,38 @@ def test_booking_end_to_end(client: TestClient, db: sessionmaker[Session]) -> No
     )
     assert cancel.status_code == 200, cancel.text
     assert cancel.json()["status"] == "CANCELLED"
+
+
+def test_patient_appointment_doctor_name_falls_back_without_profile(
+    client: TestClient, db: sessionmaker[Session]
+) -> None:
+    """When the doctor has no DoctorProfile the patient list shows "Doctor #{id}"."""
+    patient_id, patient_token = _seed_patient(db, "book-fallback-patient@sehaty.ma")
+    with db() as session:
+        doctor = User(
+            email="book-fallback-doc@clinic.ma",
+            role=UserRole.DOCTOR,
+            is_active=True,
+            password_hash="unused",
+        )
+        session.add(doctor)
+        session.flush()
+        doctor_id = int(doctor.id)
+        appt = Appointment(
+            patient_id=patient_id,
+            doctor_id=doctor_id,
+            start_at=_SLOT_START,
+            end_at=_SECOND_SLOT_START,
+            status=AppointmentStatus.REQUESTED,
+        )
+        session.add(appt)
+        session.commit()
+
+    mine = client.get("/api/v1/appointments", headers=_auth(patient_token))
+    assert mine.status_code == 200, mine.text
+    assert len(mine.json()) == 1
+    assert mine.json()[0]["doctor_id"] == doctor_id
+    assert mine.json()[0]["doctor_name"] == f"Doctor #{doctor_id}"
 
 
 def test_non_doctor_cannot_add_availability(client: TestClient, db: sessionmaker[Session]) -> None:

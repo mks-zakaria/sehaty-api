@@ -102,3 +102,17 @@ def my_prescriptions(
     """The calling patient's OWN prescriptions across doctors, newest first."""
     rows = PrescriptionController.list_for_app_patient(user.id)
     return [PrescriptionSummaryOut.model_validate(r) for r in rows]
+
+
+@router.get("/api/v1/me/prescriptions/{prescription_id}", response_model=PrescriptionDetailOut)
+def my_prescription_detail(
+    prescription_id: int,
+    user: User = Depends(_require_patient),
+) -> PrescriptionDetailOut:
+    """One of the calling patient's OWN prescriptions with items + letterhead.
+
+    403 if the prescription belongs to another patient; 404 if it does not exist
+    (both mapped from the SehatyError taxonomy by the global handler in ``main``).
+    """
+    detail = PrescriptionController.get_for_app_patient(user.id, prescription_id)
+    return PrescriptionDetailOut.model_validate(detail)

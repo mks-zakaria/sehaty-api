@@ -49,6 +49,25 @@ class AppointmentOut(BaseModel):
     notes: str | None = None
 
 
+class PatientAppointmentOut(BaseModel):
+    """A patient's own appointment, carrying the doctor's human-readable name.
+
+    Translates the core ``PatientAppointmentRow`` projection (from
+    ``AppointmentController.list_for_patient_view``): ``doctor_name`` resolves to
+    the doctor's profile name, falling back to ``"Doctor #{id}"``.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    doctor_id: int
+    doctor_name: str
+    start_at: datetime
+    end_at: datetime
+    status: AppointmentStatus
+    reason: str | None = None
+
+
 class SlotOut(BaseModel):
     """One free bookable slot for a doctor (a `(start, end)` pair)."""
 

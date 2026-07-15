@@ -272,6 +272,42 @@ def test_patient_reads_and_feedback_ownership(
     assert doc_fb.json()[0]["author_user_id"] == p1_id
 
 
+def test_patient_prescription_detail_scope(client: TestClient, db: sessionmaker[Session]) -> None:
+    """GET /me/prescriptions/{id}: own -> items; other patient -> 403; unknown -> 404."""
+    doctor_id, doctor_token = _register_and_login_doctor(client, "5")
+    _add_window(client, doctor_token)
+
+    p1_id, p1_token = _seed_patient(db, "clin-detail-p1@sehaty.ma")
+    p2_id, p2_token = _seed_patient(db, "clin-detail-p2@sehaty.ma")
+    _book(client, p1_token, doctor_id, _slot(9, 0))
+    _book(client, p2_token, doctor_id, _slot(9, 30))
+    cp1 = _register_row_id(client, doctor_token, p1_id)
+
+    rx = client.post(
+        f"/api/v1/doctor/patients/{cp1}/prescriptions",
+        headers=_auth(doctor_token),
+        json={"items": [{"drug_name": "Ibuprofène", "dosage": "400mg", "frequency": "2x/jour"}]},
+    )
+    assert rx.status_code == 201, rx.text
+    rx_id = rx.json()["id"]
+
+    # Owner sees the full detail (items + letterhead field present).
+    own = client.get(f"/api/v1/me/prescriptions/{rx_id}", headers=_auth(p1_token))
+    assert own.status_code == 200, own.text
+    body = own.json()
+    assert body["id"] == rx_id
+    assert [i["drug_name"] for i in body["items"]] == ["Ibuprofène"]
+    assert "letterhead" in body
+
+    # Another patient is forbidden.
+    other = client.get(f"/api/v1/me/prescriptions/{rx_id}", headers=_auth(p2_token))
+    assert other.status_code == 403, other.text
+
+    # Unknown prescription id -> 404.
+    missing = client.get("/api/v1/me/prescriptions/999999", headers=_auth(p1_token))
+    assert missing.status_code == 404, missing.text
+
+
 # --- Role gates --------------------------------------------------------------
 
 
@@ -288,6 +324,7 @@ def test_non_patient_on_me_routes_is_403(client: TestClient, db: sessionmaker[Se
     admin_token = _seed_admin(db, "clin-admin2@sehaty.ma")
     for token in (doctor_token, admin_token):
         assert client.get("/api/v1/me/prescriptions", headers=_auth(token)).status_code == 403
+        assert client.get("/api/v1/me/prescriptions/1", headers=_auth(token)).status_code == 403
         assert client.get("/api/v1/me/diagnoses", headers=_auth(token)).status_code == 403
         fb = client.post(
             "/api/v1/me/feedback",
