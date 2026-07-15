@@ -42,6 +42,7 @@ from sehaty.db import (
     PracticeProfile,
     Prescription,
     PrescriptionItem,
+    PrescriptionTemplate,
     RankingWeights,
     Referral,
     RefreshToken,
@@ -103,6 +104,7 @@ _TABLES = [
     Medication.__table__,
     Prescription.__table__,
     PrescriptionItem.__table__,
+    PrescriptionTemplate.__table__,
     Diagnosis.__table__,
     TreatmentFeedback.__table__,
 ]
