@@ -46,6 +46,7 @@ class DoctorProfileIn(BaseModel):
     lng: float | None = None
     consultation_fee: float | None = None
     languages: list[str] = Field(default_factory=list)
+    timezone: str | None = None
     specialty_slugs: list[str] = Field(default_factory=list)
 
 
@@ -83,6 +84,7 @@ class DoctorPublicOut(BaseModel):
     lng: float | None = None
     consultation_fee: float | None = None
     languages: list[str]
+    timezone: str
     verification_status: str
     specialties: list[SpecialtyRefOut]
 

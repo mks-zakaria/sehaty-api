@@ -146,6 +146,7 @@ def test_flow_doctor_profile_public_page(
             "lat": lat,
             "lng": lng,
             "specialty_slugs": ["generalist"],
+            "timezone": "UTC",
         },
     )
     assert put.status_code == 200, put.text
@@ -203,6 +204,15 @@ def test_flow_booking(client: TestClient, db: sessionmaker[Session]) -> None:
     )
     assert login.status_code == 200, login.text
     doctor_token = login.json()["access"]
+
+    # Pin the clinic timezone to UTC so the availability wall-clock hours below
+    # generate slots at the same UTC instants the assertions expect.
+    prof = client.put(
+        "/api/v1/doctors/me/profile",
+        headers={"Authorization": f"Bearer {doctor_token}"},
+        json={"full_name": "Dr Flow Four", "timezone": "UTC"},
+    )
+    assert prof.status_code == 200, prof.text
 
     # An admin accredits the doctor.
     with db() as session:

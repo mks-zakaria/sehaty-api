@@ -25,11 +25,13 @@ from sehaty.db import (
     Appointment,
     AuditLog,
     Availability,
+    AvailabilityException,
     ClinicPatient,
     CreditLedger,
     Diagnosis,
     DoctorAssistant,
     DoctorProfile,
+    DoctorSpecialty,
     FeatureFlag,
     Invoice,
     Medication,
@@ -45,12 +47,14 @@ from sehaty.db import (
     RefreshToken,
     ReputationScore,
     Review,
+    Specialty,
     Subscription,
     TreatmentFeedback,
     User,
 )
 from sehaty.db.base import SehatyBase
 from sqlalchemy import create_engine, text
+from sqlalchemy import event as sa_event
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -75,8 +79,11 @@ _TABLES = [
     RefreshToken.__table__,
     PhoneOtp.__table__,
     DoctorProfile.__table__,
+    DoctorSpecialty.__table__,
+    Specialty.__table__,
     AuditLog.__table__,
     Availability.__table__,
+    AvailabilityException.__table__,
     Appointment.__table__,
     ClinicPatient.__table__,
     DoctorAssistant.__table__,
@@ -109,6 +116,15 @@ def db() -> Iterator[sessionmaker[Session]]:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+
+    @sa_event.listens_for(engine, "connect")
+    def _register_geo_udfs(dbapi_conn: object, _record: object) -> None:
+        # GeoAlchemy2 wraps geography reads in AsBinary(...); SQLite lacks it.
+        # Test geopoints are NULL, so a no-op passthrough is enough for the
+        # full-entity DoctorProfile loads (e.g. profile upsert).
+        for _name in ("AsBinary", "ST_AsBinary", "ST_AsEWKB"):
+            dbapi_conn.create_function(_name, 1, lambda v: v)  # type: ignore[attr-defined]
+
     SehatyBase.metadata.create_all(engine, tables=_TABLES)
     factory = sessionmaker(bind=engine, expire_on_commit=False)
     session_mod.set_session_factory(factory)

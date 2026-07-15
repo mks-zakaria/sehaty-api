@@ -51,7 +51,16 @@ def _register_and_login_doctor(client: TestClient, suffix: str, slug: str) -> tu
         json={"email": f"rev-doc-{suffix}@clinic.ma", "password": "rev-pw-123"},
     )
     assert login.status_code == 200, login.text
-    return doctor_id, login.json()["access"]
+    token = login.json()["access"]
+    # Pin the clinic timezone to UTC so the fixed-UTC _SLOT_START stays a valid
+    # slot (availability wall-clock times generate slots in the doctor's tz).
+    prof = client.put(
+        "/api/v1/doctors/me/profile",
+        headers=_auth(token),
+        json={"full_name": f"Dr Review {suffix}", "timezone": "UTC"},
+    )
+    assert prof.status_code == 200, prof.text
+    return doctor_id, token
 
 
 def _seed_admin(db: sessionmaker[Session], email: str) -> str:
@@ -242,6 +251,7 @@ def test_public_reviews_by_slug(pg_client: TestClient, pg_db: sessionmaker[Sessi
             "lat": lat,
             "lng": lng,
             "specialty_slugs": ["generalist"],
+            "timezone": "UTC",
         },
     )
     assert put.status_code == 200, put.text
