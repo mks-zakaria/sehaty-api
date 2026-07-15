@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.24.0 (2026-07-15)
+
+### Features
+
+- Add doctor dashboard endpoint (today, to-confirm, upcoming, patients, next appointment)
+  ([#50](https://github.com/mks-zakaria/sehaty-api/pull/50),
+  [`d374ab9`](https://github.com/mks-zakaria/sehaty-api/commit/d374ab9f96994a0accca8247bd344f283d6564a1))
+
+
 ## v1.23.0 (2026-07-15)
 
 ### Features
