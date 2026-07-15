@@ -34,6 +34,18 @@ class AppointmentTransitionIn(BaseModel):
     notes: str | None = None
 
 
+class RescheduleIn(BaseModel):
+    """A reschedule request (the `POST /{id}/reschedule` body).
+
+    Maps one-to-one onto `AppointmentController.reschedule`: `new_start_at` must
+    be a genuine free slot for the appointment's doctor (validated in core, else
+    a 409). Shared by the patient route and the doctor/assistant route.
+    """
+
+    new_start_at: datetime
+    notes: str | None = None
+
+
 class AppointmentOut(BaseModel):
     """An appointment as seen by its patient or doctor."""
 

@@ -15,6 +15,7 @@ from schemas.appointments import (
     AppointmentOut,
     AppointmentTransitionIn,
     PatientAppointmentOut,
+    RescheduleIn,
 )
 
 router = APIRouter(prefix="/api/v1/appointments", tags=["appointments"])
@@ -47,6 +48,23 @@ def list_appointments(
         return [PatientAppointmentOut.model_validate(r) for r in rows]
     appts = AppointmentController.list_for(user.id, user.role)
     return [AppointmentOut.model_validate(a) for a in appts]
+
+
+@router.post("/{appointment_id}/reschedule", response_model=AppointmentOut)
+def reschedule_appointment(
+    appointment_id: int,
+    body: RescheduleIn,
+    user: User = Depends(_require_patient),
+) -> AppointmentOut:
+    """Move the calling patient's own appointment to a different free slot.
+
+    Only the owning patient may act (403 otherwise); the move resets the status
+    to REQUESTED and validates the new slot (409 if it is not bookable).
+    """
+    appt = AppointmentController.reschedule(
+        user.id, UserRole.PATIENT, appointment_id, body.new_start_at, body.notes
+    )
+    return AppointmentOut.model_validate(appt)
 
 
 @router.patch("/{appointment_id}", response_model=AppointmentOut)
