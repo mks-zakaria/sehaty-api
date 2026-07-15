@@ -20,6 +20,7 @@ from routers.billing import router as billing_router
 from routers.config import router as config_router
 from routers.doctors import router as doctors_router
 from routers.notifications import router as notifications_router
+from routers.patients import router as patients_router
 from routers.referrals import router as referrals_router
 from routers.reports import router as reports_router
 from routers.reviews import router as reviews_router
@@ -70,6 +71,7 @@ app.include_router(reviews_router)
 app.include_router(admin_router)
 app.include_router(billing_router)
 app.include_router(referrals_router)
+app.include_router(patients_router)
 app.include_router(notifications_router)
 app.include_router(reports_router)
 app.include_router(config_router)
