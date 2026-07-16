@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.28.0 (2026-07-16)
+
+### Features
+
+- Add doctor analytics endpoint ([#58](https://github.com/mks-zakaria/sehaty-api/pull/58),
+  [`85fbed8`](https://github.com/mks-zakaria/sehaty-api/commit/85fbed85d9b64788677308a6dcbffbd37eda2187))
+
+
 ## v1.27.0 (2026-07-16)
 
 ### Features
