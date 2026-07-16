@@ -13,6 +13,7 @@ from sehaty.core.errors import SehatyError
 
 from core_config import settings
 from routers.admin import router as admin_router
+from routers.analytics import router as analytics_router
 from routers.appointments import router as appointments_router
 from routers.assistants import router as assistants_router
 from routers.auth import router as auth_router
@@ -81,6 +82,7 @@ app.include_router(billing_router)
 app.include_router(referrals_router)
 app.include_router(patients_router)
 app.include_router(dashboard_router)
+app.include_router(analytics_router)
 app.include_router(notifications_router)
 app.include_router(reports_router)
 app.include_router(config_router)
