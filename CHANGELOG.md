@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.29.0 (2026-07-16)
+
+### Features
+
+- Add messaging endpoints ([#60](https://github.com/mks-zakaria/sehaty-api/pull/60),
+  [`6c00d9e`](https://github.com/mks-zakaria/sehaty-api/commit/6c00d9e44071e88b8a8a2af80af20de58b25faa0))
+
+
 ## v1.28.0 (2026-07-16)
 
 ### Features
