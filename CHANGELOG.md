@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.27.0 (2026-07-16)
+
+### Features
+
+- Add public doctor-directory endpoint ([#56](https://github.com/mks-zakaria/sehaty-api/pull/56),
+  [`e02ca49`](https://github.com/mks-zakaria/sehaty-api/commit/e02ca496202f32ee63fd78e9c7e52664d7848270))
+
+
 ## v1.26.0 (2026-07-15)
 
 ### Features
