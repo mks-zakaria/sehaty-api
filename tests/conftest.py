@@ -35,7 +35,10 @@ from sehaty.db import (
     FeatureFlag,
     Invoice,
     Medication,
+    Message,
+    MessageThread,
     Notification,
+    PatientProfile,
     Payment,
     PhoneOtp,
     Plan,
@@ -107,6 +110,9 @@ _TABLES = [
     PrescriptionTemplate.__table__,
     Diagnosis.__table__,
     TreatmentFeedback.__table__,
+    PatientProfile.__table__,
+    MessageThread.__table__,
+    Message.__table__,
 ]
 
 
