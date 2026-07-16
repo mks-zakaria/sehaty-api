@@ -25,6 +25,7 @@ route. The numeric route is declared first so a digits-only path binds to it.
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query
+from sehaty.core.controllers.directory import DoctorDirectoryController
 from sehaty.core.controllers.doctor_search import DoctorSearchController
 from sehaty.core.controllers.doctors import DoctorController
 from sehaty.core.controllers.reviews import ReviewController
@@ -34,6 +35,7 @@ from sehaty.db import User, UserRole
 
 from deps import require_roles
 from schemas.appointments import SlotOut
+from schemas.directory import DirectoryPageOut
 from schemas.doctors import DoctorProfileIn, DoctorPublicOut, DoctorSearchResultOut
 from schemas.reviews import ReviewOut
 
@@ -65,6 +67,32 @@ def search_doctors(
         limit=limit,
     )
     return [DoctorSearchResultOut.model_validate(r) for r in results]
+
+
+@router.get("/directory", response_model=DirectoryPageOut)
+def list_directory(
+    specialty: str | None = Query(
+        default=None, description="Optional specialty slug to narrow the listing."
+    ),
+    sort: str = Query(default="rating", description="One of 'rating', 'reviews', 'name'."),
+    limit: int = Query(default=20, description="Maximum doctors per page."),
+    offset: int = Query(default=0, description="Number of doctors to skip (pagination)."),
+) -> DirectoryPageOut:
+    """Public directory browse: VERIFIED doctors by specialty + rating (no geo).
+
+    The non-geolocated companion to the marketplace search — a patient can browse
+    accredited doctors without sharing a location. Declared before ``GET /{slug}``
+    so the literal ``/directory`` segment binds here instead of being captured as
+    a slug. An invalid ``sort``/``limit``/``offset`` surfaces as a 400 via the
+    SehatyValidationError handler. Parse -> ONE controller call -> serialize.
+    """
+    page = DoctorDirectoryController.list_directory(
+        specialty=specialty,
+        sort=sort,
+        limit=limit,
+        offset=offset,
+    )
+    return DirectoryPageOut.model_validate(page)
 
 
 @router.put("/me/profile")
