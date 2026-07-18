@@ -13,15 +13,17 @@ to HTTP by the global exception handler in ``main``.
 """
 
 from fastapi import APIRouter, Depends
-from sehaty.core.controllers.messaging import MessagingController
+from sehaty.core.controllers.messaging import (
+    MessageView,
+    MessagingController,
+    ThreadDetail,
+    ThreadView,
+)
 from sehaty.db import User, UserRole
 
 from deps import get_acting_doctor_id, require_roles
 from schemas.messaging import (
-    MessageOut,
     PostMessageIn,
-    ThreadDetailOut,
-    ThreadOut,
     UnreadOut,
 )
 
@@ -30,13 +32,12 @@ router = APIRouter(prefix="/api/v1/doctor/messages", tags=["messages"])
 _require_clinic = require_roles(UserRole.DOCTOR, UserRole.ASSISTANT)
 
 
-@router.get("", response_model=list[ThreadOut])
+@router.get("", response_model=list[ThreadView])
 def list_threads(
     acting_doctor_id: int = Depends(get_acting_doctor_id),
-) -> list[ThreadOut]:
+) -> list[ThreadView]:
     """The (acting) doctor's clinic inbox, newest-activity first, with unread."""
-    rows = MessagingController.list_threads_for_doctor(acting_doctor_id)
-    return [ThreadOut.model_validate(row) for row in rows]
+    return MessagingController.list_threads_for_doctor(acting_doctor_id)
 
 
 @router.get("/unread", response_model=UnreadOut)
@@ -47,26 +48,24 @@ def unread_total(
     return UnreadOut(unread=MessagingController.unread_total_for_doctor(acting_doctor_id))
 
 
-@router.get("/{thread_id}", response_model=ThreadDetailOut)
+@router.get("/{thread_id}", response_model=ThreadDetail)
 def get_thread(
     thread_id: int,
     caller: User = Depends(_require_clinic),
-) -> ThreadDetailOut:
+) -> ThreadDetail:
     """One thread + its messages (oldest->newest); marks the clinic side read.
 
     The caller's own id is the viewer, so ``mine`` reflects the actual author and
     core authorizes a doctor or the doctor's active assistant (403 otherwise).
     """
-    detail = MessagingController.get_thread(caller.id, thread_id)
-    return ThreadDetailOut.model_validate(detail)
+    return MessagingController.get_thread(caller.id, thread_id)
 
 
-@router.post("/{thread_id}", response_model=MessageOut)
+@router.post("/{thread_id}", response_model=MessageView)
 def post_message(
     thread_id: int,
     body: PostMessageIn,
     caller: User = Depends(_require_clinic),
-) -> MessageOut:
+) -> MessageView:
     """Append a clinic message; the caller's own id is the sender (403/404 on abuse)."""
-    message = MessagingController.post_message(caller.id, thread_id, body.body)
-    return MessageOut.model_validate(message)
+    return MessagingController.post_message(caller.id, thread_id, body.body)
