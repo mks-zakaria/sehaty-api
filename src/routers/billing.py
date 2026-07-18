@@ -13,7 +13,7 @@ taxonomy) are mapped to HTTP by the global exception handler in ``main``.
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends
-from sehaty.core.controllers.billing import BillingController
+from sehaty.core.controllers.billing import BillingController, SubscriptionSummary
 from sehaty.db import User, UserRole
 
 from deps import get_current_user, require_roles
@@ -23,7 +23,6 @@ from schemas.billing import (
     PlanOut,
     SubscribeIn,
     SubscriptionOut,
-    SubscriptionSummaryOut,
 )
 
 router = APIRouter(prefix="/api/v1/billing", tags=["billing"])
@@ -41,13 +40,12 @@ def list_plans(
     return [PlanOut.model_validate(p) for p in plans]
 
 
-@router.get("/me", response_model=SubscriptionSummaryOut)
+@router.get("/me", response_model=SubscriptionSummary)
 def my_subscription(
     doctor: User = Depends(_require_doctor),
-) -> SubscriptionSummaryOut:
+) -> SubscriptionSummary:
     """The calling doctor's plan, status, amount due, and period end (404 if none)."""
-    summary = BillingController.subscription_status(doctor.id)
-    return SubscriptionSummaryOut.model_validate(summary)
+    return BillingController.subscription_status(doctor.id)
 
 
 @router.post("/me/subscribe", response_model=SubscriptionOut)
