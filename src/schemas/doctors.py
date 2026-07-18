@@ -1,32 +1,11 @@
-"""Request/response DTOs for the doctors surface — boundary translation only.
+"""Request DTOs for the doctors surface — boundary translation only.
 
-No business logic, no DB access. `*In` models parse the request body; `*Out`
-models translate a `sehaty.core` view (a frozen dataclass) or a
-`sehaty.db.DoctorProfile` ORM row into the JSON contract clients consume.
+No business logic, no DB access. `*In` models parse the request body; the
+response contracts are served directly from the `sehaty.core` projections
+(``DoctorView`` / ``DoctorSearchResult`` / ``SpecialtyView``).
 """
 
-from pydantic import BaseModel, ConfigDict, Field
-
-
-class DoctorSearchResultOut(BaseModel):
-    """One ranked hit of the nearest-by-specialty doctor search.
-
-    Mirrors `sehaty.core`'s `DoctorSearchResult` dataclass one-to-one: the geo
-    distance and blended `rank` are computed by the controller, never here.
-    """
-
-    model_config = ConfigDict(from_attributes=True)
-
-    slug: str
-    full_name: str
-    photo_url: str | None = None
-    city: str | None = None
-    distance_m: float
-    lat: float | None = None
-    lng: float | None = None
-    avg_stars: float
-    review_count: int
-    rank: float
+from pydantic import BaseModel, Field
 
 
 class DoctorProfileIn(BaseModel):
@@ -48,54 +27,3 @@ class DoctorProfileIn(BaseModel):
     languages: list[str] = Field(default_factory=list)
     timezone: str | None = None
     specialty_slugs: list[str] = Field(default_factory=list)
-
-
-class SpecialtyRefOut(BaseModel):
-    """One specialty a doctor is tagged with (localized names, no id)."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    slug: str
-    name_en: str
-    name_fr: str
-    name_ar: str
-
-
-class DoctorPublicOut(BaseModel):
-    """Public doctor page — mirrors `sehaty.core`'s `DoctorView`.
-
-    Coordinates arrive as plain `lat`/`lng` floats (the raw PostGIS geography is
-    never exposed); only VERIFIED doctors are ever serialized here.
-
-    `id` is the doctor's numeric id (their `user_id`) — the handle the booking
-    flow (`/dr/:slug` → `/book`) needs to POST an appointment by `doctor_id`.
-    """
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    slug: str
-    full_name: str
-    bio: str | None = None
-    photo_url: str | None = None
-    address: str | None = None
-    city: str | None = None
-    lat: float | None = None
-    lng: float | None = None
-    consultation_fee: float | None = None
-    languages: list[str]
-    timezone: str
-    verification_status: str
-    specialties: list[SpecialtyRefOut]
-
-
-class SpecialtyOut(BaseModel):
-    """One row of the medical-specialties catalogue."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    slug: str
-    name_en: str
-    name_fr: str
-    name_ar: str

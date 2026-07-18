@@ -6,14 +6,12 @@ mostly-static lookup consumed by the marketplace and the doctor profile editor.
 """
 
 from fastapi import APIRouter
-from sehaty.core.controllers.specialties import SpecialtyController
-
-from schemas.doctors import SpecialtyOut
+from sehaty.core.controllers.specialties import SpecialtyController, SpecialtyView
 
 router = APIRouter(prefix="/api/v1/specialties", tags=["specialties"])
 
 
-@router.get("", response_model=list[SpecialtyOut])
-def list_specialties() -> list[SpecialtyOut]:
+@router.get("", response_model=list[SpecialtyView])
+def list_specialties() -> list[SpecialtyView]:
     """Return the whole specialties catalogue, ordered by English name."""
-    return [SpecialtyOut.model_validate(s) for s in SpecialtyController.list_specialties()]
+    return SpecialtyController.list_specialties()

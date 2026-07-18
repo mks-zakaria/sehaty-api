@@ -25,9 +25,9 @@ route. The numeric route is declared first so a digits-only path binds to it.
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query
-from sehaty.core.controllers.directory import DoctorDirectoryController
-from sehaty.core.controllers.doctor_search import DoctorSearchController
-from sehaty.core.controllers.doctors import DoctorController
+from sehaty.core.controllers.directory import DirectoryPage, DoctorDirectoryController
+from sehaty.core.controllers.doctor_search import DoctorSearchController, DoctorSearchResult
+from sehaty.core.controllers.doctors import DoctorController, DoctorView
 from sehaty.core.controllers.reviews import ReviewController
 from sehaty.core.db.session import get_session
 from sehaty.core.services.slots import available_slots
@@ -35,8 +35,7 @@ from sehaty.db import User, UserRole
 
 from deps import require_roles
 from schemas.appointments import SlotOut
-from schemas.directory import DirectoryPageOut
-from schemas.doctors import DoctorProfileIn, DoctorPublicOut, DoctorSearchResultOut
+from schemas.doctors import DoctorProfileIn
 from schemas.reviews import ReviewOut
 
 router = APIRouter(prefix="/api/v1/doctors", tags=["doctors"])
@@ -44,14 +43,14 @@ router = APIRouter(prefix="/api/v1/doctors", tags=["doctors"])
 _require_doctor = require_roles(UserRole.DOCTOR)
 
 
-@router.get("", response_model=list[DoctorSearchResultOut])
+@router.get("", response_model=list[DoctorSearchResult])
 def search_doctors(
     specialty: str = Query(..., description="Specialty slug to search within."),
     lat: float = Query(..., description="Search origin latitude."),
     lng: float = Query(..., description="Search origin longitude."),
     radius_m: int = Query(default=10000, description="Search radius in metres."),
     limit: int = Query(default=20, description="Maximum number of hits."),
-) -> list[DoctorSearchResultOut]:
+) -> list[DoctorSearchResult]:
     """Public marketplace search: VERIFIED doctors of a specialty near a point.
 
     Returns hits ranked best-first (a weighted blend of rating + proximity),
@@ -59,17 +58,16 @@ def search_doctors(
     one is a 422 from FastAPI, an out-of-range value a 400 from the controller's
     SehatyValidationError. Parse -> ONE controller call -> serialize.
     """
-    results = DoctorSearchController.search(
+    return DoctorSearchController.search(
         specialty_slug=specialty,
         lat=lat,
         lng=lng,
         radius_m=radius_m,
         limit=limit,
     )
-    return [DoctorSearchResultOut.model_validate(r) for r in results]
 
 
-@router.get("/directory", response_model=DirectoryPageOut)
+@router.get("/directory", response_model=DirectoryPage)
 def list_directory(
     specialty: str | None = Query(
         default=None, description="Optional specialty slug to narrow the listing."
@@ -77,7 +75,7 @@ def list_directory(
     sort: str = Query(default="rating", description="One of 'rating', 'reviews', 'name'."),
     limit: int = Query(default=20, description="Maximum doctors per page."),
     offset: int = Query(default=0, description="Number of doctors to skip (pagination)."),
-) -> DirectoryPageOut:
+) -> DirectoryPage:
     """Public directory browse: VERIFIED doctors by specialty + rating (no geo).
 
     The non-geolocated companion to the marketplace search — a patient can browse
@@ -86,13 +84,12 @@ def list_directory(
     a slug. An invalid ``sort``/``limit``/``offset`` surfaces as a 400 via the
     SehatyValidationError handler. Parse -> ONE controller call -> serialize.
     """
-    page = DoctorDirectoryController.list_directory(
+    return DoctorDirectoryController.list_directory(
         specialty=specialty,
         sort=sort,
         limit=limit,
         offset=offset,
     )
-    return DirectoryPageOut.model_validate(page)
 
 
 @router.put("/me/profile")
@@ -109,13 +106,12 @@ def upsert_my_profile(
     return {"slug": slug}
 
 
-@router.get("/{slug}", response_model=DoctorPublicOut)
-def get_doctor(slug: str) -> DoctorPublicOut:
+@router.get("/{slug}", response_model=DoctorView)
+def get_doctor(slug: str) -> DoctorView:
     """Public doctor page. 404 (via the SehatyError handler) when the slug is
     unknown or the doctor is not VERIFIED — unverified profiles are not leaked.
     """
-    view = DoctorController.get_by_slug(slug)
-    return DoctorPublicOut.model_validate(view)
+    return DoctorController.get_by_slug(slug)
 
 
 @router.get("/{slug}/reviews", response_model=list[ReviewOut])
