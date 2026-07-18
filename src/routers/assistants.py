@@ -11,16 +11,15 @@ mapped to HTTP by the global exception handler in ``main``.
 """
 
 from fastapi import APIRouter, Depends, Response, status
-from sehaty.core.controllers.assistants import AssistantController
+from sehaty.core.controllers.assistants import (
+    AssistantController,
+    AssistantRow,
+    DoctorRef,
+)
 from sehaty.db import User, UserRole
 
 from deps import require_roles
-from schemas.assistant import (
-    AssistantCreateIn,
-    AssistantLinkIn,
-    AssistantOut,
-    DoctorRefOut,
-)
+from schemas.assistant import AssistantCreateIn, AssistantLinkIn
 
 router = APIRouter(prefix="/api/v1", tags=["assistants"])
 
@@ -30,22 +29,21 @@ _require_assistant = require_roles(UserRole.ASSISTANT)
 
 @router.post(
     "/doctor/assistants",
-    response_model=AssistantOut,
+    response_model=AssistantRow,
     status_code=status.HTTP_201_CREATED,
 )
 def create_assistant(
     body: AssistantCreateIn,
     doctor: User = Depends(_require_doctor),
-) -> AssistantOut:
+) -> AssistantRow:
     """Onboard a new ASSISTANT account and link it to the calling doctor."""
-    row = AssistantController.create_assistant_account(
+    return AssistantController.create_assistant_account(
         doctor_id=doctor.id,
         email=body.email,
         phone=body.phone,
         full_name=body.full_name,
         password=body.password,
     )
-    return AssistantOut.model_validate(row)
 
 
 @router.post("/doctor/assistants/link", status_code=status.HTTP_204_NO_CONTENT)
@@ -58,13 +56,12 @@ def link_assistant(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/doctor/assistants", response_model=list[AssistantOut])
+@router.get("/doctor/assistants", response_model=list[AssistantRow])
 def list_assistants(
     doctor: User = Depends(_require_doctor),
-) -> list[AssistantOut]:
+) -> list[AssistantRow]:
     """List the calling doctor's active assistants."""
-    rows = AssistantController.list_assistants(doctor.id)
-    return [AssistantOut.model_validate(r) for r in rows]
+    return AssistantController.list_assistants(doctor.id)
 
 
 @router.delete("/doctor/assistants/{assistant_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -77,10 +74,9 @@ def remove_assistant(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/assistant/doctors", response_model=list[DoctorRefOut])
+@router.get("/assistant/doctors", response_model=list[DoctorRef])
 def list_doctors_for_assistant(
     assistant: User = Depends(_require_assistant),
-) -> list[DoctorRefOut]:
+) -> list[DoctorRef]:
     """List the doctors the calling assistant actively works for."""
-    refs = AssistantController.list_doctors_for_assistant(assistant.id)
-    return [DoctorRefOut.model_validate(r) for r in refs]
+    return AssistantController.list_doctors_for_assistant(assistant.id)
