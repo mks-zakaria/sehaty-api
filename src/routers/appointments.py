@@ -6,15 +6,17 @@ then drive the appointment through the role-based status matrix. Business errors
 """
 
 from fastapi import APIRouter, Depends, status
-from sehaty.core.controllers.appointments import AppointmentController
+from sehaty.core.controllers.appointments import (
+    AppointmentController,
+    AppointmentRow,
+    PatientAppointmentRow,
+)
 from sehaty.db import User, UserRole
 
 from deps import get_current_user, require_roles
 from schemas.appointments import (
     AppointmentIn,
-    AppointmentOut,
     AppointmentTransitionIn,
-    PatientAppointmentOut,
     RescheduleIn,
 )
 
@@ -23,58 +25,53 @@ router = APIRouter(prefix="/api/v1/appointments", tags=["appointments"])
 _require_patient = require_roles(UserRole.PATIENT)
 
 
-@router.post("", response_model=AppointmentOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=AppointmentRow, status_code=status.HTTP_201_CREATED)
 def book_appointment(
     body: AppointmentIn,
     user: User = Depends(_require_patient),
-) -> AppointmentOut:
+) -> AppointmentRow:
     """Book a free slot as the calling patient (409 if it is not bookable)."""
-    appt = AppointmentController.book(user.id, body.doctor_id, body.start_at, body.reason)
-    return AppointmentOut.model_validate(appt)
+    return AppointmentController.book(user.id, body.doctor_id, body.start_at, body.reason)
 
 
-@router.get("", response_model=list[PatientAppointmentOut | AppointmentOut])
+@router.get("", response_model=list[PatientAppointmentRow | AppointmentRow])
 def list_appointments(
     user: User = Depends(get_current_user),
-) -> list[PatientAppointmentOut] | list[AppointmentOut]:
+) -> list[PatientAppointmentRow] | list[AppointmentRow]:
     """List the caller's appointments (patient: booked; doctor: on their calendar).
 
     A PATIENT gets the enriched view carrying the resolved ``doctor_name`` (the
     ``PatientAppointmentRow`` projection); every other role keeps the plain
-    ``AppointmentOut`` (with ``patient_id``/``doctor_id``) as before.
+    ``AppointmentRow`` (with ``patient_id``/``doctor_id``) as before.
     """
     if user.role == UserRole.PATIENT:
-        rows = AppointmentController.list_for_patient_view(user.id)
-        return [PatientAppointmentOut.model_validate(r) for r in rows]
-    appts = AppointmentController.list_for(user.id, user.role)
-    return [AppointmentOut.model_validate(a) for a in appts]
+        return AppointmentController.list_for_patient_view(user.id)
+    return AppointmentController.list_for(user.id, user.role)
 
 
-@router.post("/{appointment_id}/reschedule", response_model=AppointmentOut)
+@router.post("/{appointment_id}/reschedule", response_model=AppointmentRow)
 def reschedule_appointment(
     appointment_id: int,
     body: RescheduleIn,
     user: User = Depends(_require_patient),
-) -> AppointmentOut:
+) -> AppointmentRow:
     """Move the calling patient's own appointment to a different free slot.
 
     Only the owning patient may act (403 otherwise); the move resets the status
     to REQUESTED and validates the new slot (409 if it is not bookable).
     """
-    appt = AppointmentController.reschedule(
+    return AppointmentController.reschedule(
         user.id, UserRole.PATIENT, appointment_id, body.new_start_at, body.notes
     )
-    return AppointmentOut.model_validate(appt)
 
 
-@router.patch("/{appointment_id}", response_model=AppointmentOut)
+@router.patch("/{appointment_id}", response_model=AppointmentRow)
 def transition_appointment(
     appointment_id: int,
     body: AppointmentTransitionIn,
     user: User = Depends(get_current_user),
-) -> AppointmentOut:
+) -> AppointmentRow:
     """Move an appointment along the role-based status matrix (403/409 on abuse)."""
-    appt = AppointmentController.transition(
+    return AppointmentController.transition(
         user.id, user.role, appointment_id, body.status, body.notes
     )
-    return AppointmentOut.model_validate(appt)
