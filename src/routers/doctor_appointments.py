@@ -13,61 +13,61 @@ handler in `main`.
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
-from sehaty.core.controllers.appointments import AppointmentController
+from sehaty.core.controllers.appointments import (
+    AppointmentController,
+    AppointmentGridRow,
+    AppointmentRow,
+)
 from sehaty.db import UserRole
 
 from deps import get_acting_doctor_id
-from schemas.appointments import AppointmentOut, RescheduleIn
-from schemas.doctor_appointment import AppointmentGridOut, AppointmentTransitionIn
+from schemas.appointments import AppointmentTransitionIn, RescheduleIn
 
 router = APIRouter(prefix="/api/v1/doctor/appointments", tags=["doctor-appointments"])
 
 
-@router.get("", response_model=list[AppointmentGridOut])
+@router.get("", response_model=list[AppointmentGridRow])
 def list_doctor_appointments(
     date_from: datetime | None = Query(default=None),
     date_to: datetime | None = Query(default=None),
     acting_doctor_id: int = Depends(get_acting_doctor_id),
-) -> list[AppointmentGridOut]:
+) -> list[AppointmentGridRow]:
     """List the (acting) doctor's appointments with human-readable patient names."""
-    rows = AppointmentController.list_for_doctor(acting_doctor_id, date_from, date_to)
-    return [AppointmentGridOut.model_validate(row) for row in rows]
+    return AppointmentController.list_for_doctor(acting_doctor_id, date_from, date_to)
 
 
-@router.post("/{appointment_id}/transition", response_model=AppointmentOut)
+@router.post("/{appointment_id}/transition", response_model=AppointmentRow)
 def transition_doctor_appointment(
     appointment_id: int,
     body: AppointmentTransitionIn,
     acting_doctor_id: int = Depends(get_acting_doctor_id),
-) -> AppointmentOut:
+) -> AppointmentRow:
     """Confirm/transition an appointment on the doctor's behalf (403/409 on abuse)."""
-    appt = AppointmentController.transition(
+    return AppointmentController.transition(
         user_id=acting_doctor_id,
         role=UserRole.DOCTOR,
         appointment_id=appointment_id,
         new_status=body.status,
         notes=body.notes,
     )
-    return AppointmentOut.model_validate(appt)
 
 
-@router.post("/{appointment_id}/reschedule", response_model=AppointmentOut)
+@router.post("/{appointment_id}/reschedule", response_model=AppointmentRow)
 def reschedule_doctor_appointment(
     appointment_id: int,
     body: RescheduleIn,
     acting_doctor_id: int = Depends(get_acting_doctor_id),
-) -> AppointmentOut:
+) -> AppointmentRow:
     """Move an appointment to a different free slot on the doctor's behalf.
 
     Resolves the effective doctor via ``get_acting_doctor_id`` (a linked
     assistant reschedules for their doctor); a DOCTOR move preserves the current
     status. Unavailable/invalid slots are 409, an unauthorized caller is 403.
     """
-    appt = AppointmentController.reschedule(
+    return AppointmentController.reschedule(
         user_id=acting_doctor_id,
         role=UserRole.DOCTOR,
         appointment_id=appointment_id,
         new_start_at=body.new_start_at,
         notes=body.notes,
     )
-    return AppointmentOut.model_validate(appt)
