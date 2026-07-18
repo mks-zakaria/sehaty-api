@@ -13,18 +13,6 @@ letting the controller leave the rest untouched.
 from pydantic import BaseModel, ConfigDict
 
 
-class RankingWeightsOut(BaseModel):
-    """The doctor-locator ranking weights (core ``RankingWeightsValues``)."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    w_rating: float
-    w_distance: float
-    w_responsiveness: float
-    w_verified: float
-    w_recency: float
-
-
 class RankingWeightsIn(BaseModel):
     """A partial update of the ranking weights — every field is optional.
 

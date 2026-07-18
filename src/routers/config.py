@@ -12,7 +12,7 @@ leaves every field optional and the handler forwards only what the client sent
 """
 
 from fastapi import APIRouter, Depends
-from sehaty.core.controllers.config import ConfigController
+from sehaty.core.controllers.config import ConfigController, RankingWeightsValues
 from sehaty.db import User, UserRole
 
 from deps import require_roles
@@ -21,7 +21,6 @@ from schemas.config import (
     FeatureFlagOut,
     FeatureFlagsOut,
     RankingWeightsIn,
-    RankingWeightsOut,
 )
 
 router = APIRouter(prefix="/api/v1/admin/config", tags=["config"])
@@ -29,29 +28,27 @@ router = APIRouter(prefix="/api/v1/admin/config", tags=["config"])
 _require_admin = require_roles(UserRole.ADMIN)
 
 
-@router.get("/ranking-weights", response_model=RankingWeightsOut)
+@router.get("/ranking-weights", response_model=RankingWeightsValues)
 def get_ranking_weights(
     _admin: User = Depends(_require_admin),
-) -> RankingWeightsOut:
+) -> RankingWeightsValues:
     """The live doctor-locator ranking weights (defaults until an admin tunes them)."""
-    weights = ConfigController.get_ranking_weights()
-    return RankingWeightsOut.model_validate(weights)
+    return ConfigController.get_ranking_weights()
 
 
-@router.put("/ranking-weights", response_model=RankingWeightsOut)
+@router.put("/ranking-weights", response_model=RankingWeightsValues)
 def set_ranking_weights(
     body: RankingWeightsIn,
     admin: User = Depends(_require_admin),
-) -> RankingWeightsOut:
+) -> RankingWeightsValues:
     """Update one or more ranking weights, leaving the rest untouched.
 
     Only the fields the client actually sent are forwarded; unset weights are
     not passed through, so the controller preserves their current values.
     """
-    weights = ConfigController.set_ranking_weights(
+    return ConfigController.set_ranking_weights(
         admin_id=admin.id, **body.model_dump(exclude_unset=True)
     )
-    return RankingWeightsOut.model_validate(weights)
 
 
 @router.get("/feature-flags", response_model=FeatureFlagsOut)
