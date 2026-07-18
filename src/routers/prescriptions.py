@@ -12,15 +12,15 @@ Business errors (the SehatyError taxonomy) are mapped to HTTP by the handler in
 """
 
 from fastapi import APIRouter, Depends, status
-from sehaty.core.controllers.prescriptions import PrescriptionController
+from sehaty.core.controllers.prescriptions import (
+    PrescriptionController,
+    PrescriptionDetail,
+    PrescriptionSummary,
+)
 from sehaty.db import User, UserRole
 
 from deps import require_roles
-from schemas.clinical import (
-    PrescriptionCreateIn,
-    PrescriptionDetailOut,
-    PrescriptionSummaryOut,
-)
+from schemas.clinical import PrescriptionCreateIn
 
 router = APIRouter(tags=["prescriptions"])
 
@@ -30,21 +30,21 @@ _require_patient = require_roles(UserRole.PATIENT)
 
 @router.post(
     "/api/v1/doctor/patients/{clinic_patient_id}/prescriptions",
-    response_model=PrescriptionDetailOut,
+    response_model=PrescriptionDetail,
     status_code=status.HTTP_201_CREATED,
 )
 def create_prescription(
     clinic_patient_id: int,
     body: PrescriptionCreateIn,
     doctor: User = Depends(_require_doctor),
-) -> PrescriptionDetailOut:
+) -> PrescriptionDetail:
     """Issue a prescription for one of the doctor's register patients (404 if not theirs).
 
     When ``practice_profile_id`` is omitted the doctor's default letterhead is
     used; ``expires_days`` defaults to the core default when omitted.
     """
     extra = {} if body.expires_days is None else {"expires_days": body.expires_days}
-    detail = PrescriptionController.create(
+    return PrescriptionController.create(
         doctor_id=doctor.id,
         clinic_patient_id=clinic_patient_id,
         items=[i.model_dump() for i in body.items],
@@ -53,66 +53,60 @@ def create_prescription(
         notes=body.notes,
         **extra,
     )
-    return PrescriptionDetailOut.model_validate(detail)
 
 
 @router.get(
     "/api/v1/doctor/patients/{clinic_patient_id}/prescriptions",
-    response_model=list[PrescriptionSummaryOut],
+    response_model=list[PrescriptionSummary],
 )
 def list_patient_prescriptions(
     clinic_patient_id: int,
     doctor: User = Depends(_require_doctor),
-) -> list[PrescriptionSummaryOut]:
+) -> list[PrescriptionSummary]:
     """List a register patient's prescriptions, newest first (404 if not theirs)."""
-    rows = PrescriptionController.list_for_patient(doctor.id, clinic_patient_id)
-    return [PrescriptionSummaryOut.model_validate(r) for r in rows]
+    return PrescriptionController.list_for_patient(doctor.id, clinic_patient_id)
 
 
 @router.get(
     "/api/v1/doctor/prescriptions/{prescription_id}",
-    response_model=PrescriptionDetailOut,
+    response_model=PrescriptionDetail,
 )
 def get_prescription(
     prescription_id: int,
     doctor: User = Depends(_require_doctor),
-) -> PrescriptionDetailOut:
+) -> PrescriptionDetail:
     """One prescription with its items + letterhead snapshot (404 if not theirs)."""
-    detail = PrescriptionController.get(doctor.id, prescription_id)
-    return PrescriptionDetailOut.model_validate(detail)
+    return PrescriptionController.get(doctor.id, prescription_id)
 
 
 @router.post(
     "/api/v1/doctor/prescriptions/{prescription_id}/cancel",
-    response_model=PrescriptionDetailOut,
+    response_model=PrescriptionDetail,
 )
 def cancel_prescription(
     prescription_id: int,
     doctor: User = Depends(_require_doctor),
-) -> PrescriptionDetailOut:
+) -> PrescriptionDetail:
     """Mark the doctor's prescription CANCELLED (404 if not theirs)."""
-    detail = PrescriptionController.cancel(doctor.id, prescription_id)
-    return PrescriptionDetailOut.model_validate(detail)
+    return PrescriptionController.cancel(doctor.id, prescription_id)
 
 
-@router.get("/api/v1/me/prescriptions", response_model=list[PrescriptionSummaryOut])
+@router.get("/api/v1/me/prescriptions", response_model=list[PrescriptionSummary])
 def my_prescriptions(
     user: User = Depends(_require_patient),
-) -> list[PrescriptionSummaryOut]:
+) -> list[PrescriptionSummary]:
     """The calling patient's OWN prescriptions across doctors, newest first."""
-    rows = PrescriptionController.list_for_app_patient(user.id)
-    return [PrescriptionSummaryOut.model_validate(r) for r in rows]
+    return PrescriptionController.list_for_app_patient(user.id)
 
 
-@router.get("/api/v1/me/prescriptions/{prescription_id}", response_model=PrescriptionDetailOut)
+@router.get("/api/v1/me/prescriptions/{prescription_id}", response_model=PrescriptionDetail)
 def my_prescription_detail(
     prescription_id: int,
     user: User = Depends(_require_patient),
-) -> PrescriptionDetailOut:
+) -> PrescriptionDetail:
     """One of the calling patient's OWN prescriptions with items + letterhead.
 
     403 if the prescription belongs to another patient; 404 if it does not exist
     (both mapped from the SehatyError taxonomy by the global handler in ``main``).
     """
-    detail = PrescriptionController.get_for_app_patient(user.id, prescription_id)
-    return PrescriptionDetailOut.model_validate(detail)
+    return PrescriptionController.get_for_app_patient(user.id, prescription_id)
