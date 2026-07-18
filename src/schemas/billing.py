@@ -1,8 +1,8 @@
 """Request/response DTOs for the cash-billing surface — boundary translation.
 
 No business logic, no DB access. ``*In`` models parse the request body; the
-``*Out`` models translate the ``sehaty.db`` billing ORM rows (and the core
-``SubscriptionSummary`` projection) into the JSON contract clients consume.
+``*Out`` models translate the ``sehaty.db`` billing ORM rows into the JSON
+contract clients consume.
 Plan catalogue, subscription lifecycle, cash-payment idempotency and the
 dunning sweep all live in ``BillingController``.
 """
@@ -40,17 +40,6 @@ class PlanOut(BaseModel):
     name: str
     price_month: float
     currency: str
-
-
-class SubscriptionSummaryOut(BaseModel):
-    """A doctor's current billing picture (the core ``SubscriptionSummary``)."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    plan: str | None = None
-    status: str | None = None
-    amount_due: float
-    current_period_end: datetime | None = None
 
 
 class SubscriptionOut(BaseModel):

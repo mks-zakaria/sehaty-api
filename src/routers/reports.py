@@ -16,11 +16,14 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
-from sehaty.core.controllers.reporting import ReportingController
+from sehaty.core.controllers.reporting import (
+    PlatformKpis,
+    ReportingController,
+    RevenueSummary,
+)
 from sehaty.db import User, UserRole
 
 from deps import require_roles
-from schemas.report import KpisOut, RevenueSummaryOut
 
 router = APIRouter(prefix="/api/v1/admin/reports", tags=["reports"])
 
@@ -30,23 +33,21 @@ _require_admin = require_roles(UserRole.ADMIN)
 _CSV_COLUMNS = ["date", "kind", "reference", "doctor_id", "amount", "currency", "detail"]
 
 
-@router.get("/kpis", response_model=KpisOut)
+@router.get("/kpis", response_model=PlatformKpis)
 def get_kpis(
     _admin: User = Depends(_require_admin),
-) -> KpisOut:
+) -> PlatformKpis:
     """The current operational KPIs for the admin dashboard."""
-    kpis = ReportingController.kpis()
-    return KpisOut.model_validate(kpis)
+    return ReportingController.kpis()
 
 
-@router.get("/revenue", response_model=RevenueSummaryOut)
+@router.get("/revenue", response_model=RevenueSummary)
 def get_revenue(
     year: int = Query(default_factory=lambda: datetime.now(UTC).year),
     _admin: User = Depends(_require_admin),
-) -> RevenueSummaryOut:
+) -> RevenueSummary:
     """A fiscal year's cash summary (defaults to the current year when omitted)."""
-    summary = ReportingController.revenue_summary(year)
-    return RevenueSummaryOut.model_validate(summary)
+    return ReportingController.revenue_summary(year)
 
 
 @router.get("/accounting-export")
