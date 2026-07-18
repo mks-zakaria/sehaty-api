@@ -50,17 +50,3 @@ class AvailabilityExceptionIn(BaseModel):
     end_time: time | None = None
     slot_minutes: int | None = None
     reason: str | None = None
-
-
-class AvailabilityExceptionOut(BaseModel):
-    """One of a doctor's date-specific availability exceptions."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    date: date
-    kind: str
-    start_time: time | None = None
-    end_time: time | None = None
-    slot_minutes: int | None = None
-    reason: str | None = None

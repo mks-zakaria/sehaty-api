@@ -9,13 +9,15 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Response, status
 from sehaty.core.controllers.availability import AvailabilityController
-from sehaty.core.controllers.availability_exceptions import AvailabilityExceptionController
+from sehaty.core.controllers.availability_exceptions import (
+    AvailabilityExceptionController,
+    ExceptionRow,
+)
 from sehaty.db import User, UserRole
 
 from deps import require_roles
 from schemas.availability import (
     AvailabilityExceptionIn,
-    AvailabilityExceptionOut,
     AvailabilityIn,
     AvailabilityOut,
 )
@@ -57,31 +59,30 @@ def delete_availability(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/exceptions", response_model=list[AvailabilityExceptionOut])
+@router.get("/exceptions", response_model=list[ExceptionRow])
 def list_exceptions(
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
     user: User = Depends(_require_doctor),
-) -> list[AvailabilityExceptionOut]:
+) -> list[ExceptionRow]:
     """List the calling doctor's date-specific availability exceptions.
 
     ``date_from`` / ``date_to`` (inclusive) narrow the range when supplied.
     """
-    rows = AvailabilityExceptionController.list(user.id, date_from=date_from, date_to=date_to)
-    return [AvailabilityExceptionOut.model_validate(r) for r in rows]
+    return AvailabilityExceptionController.list(user.id, date_from=date_from, date_to=date_to)
 
 
 @router.post(
     "/exceptions",
-    response_model=AvailabilityExceptionOut,
+    response_model=ExceptionRow,
     status_code=status.HTTP_201_CREATED,
 )
 def add_exception(
     body: AvailabilityExceptionIn,
     user: User = Depends(_require_doctor),
-) -> AvailabilityExceptionOut:
+) -> ExceptionRow:
     """Add a date-specific BLOCK/OPEN exception for the calling doctor."""
-    row = AvailabilityExceptionController.add(
+    return AvailabilityExceptionController.add(
         user.id,
         body.date,
         body.kind,
@@ -90,7 +91,6 @@ def add_exception(
         slot_minutes=body.slot_minutes,
         reason=body.reason,
     )
-    return AvailabilityExceptionOut.model_validate(row)
 
 
 @router.delete("/exceptions/{exception_id}", status_code=status.HTTP_204_NO_CONTENT)
