@@ -8,13 +8,17 @@ exception handler in ``main``.
 """
 
 from fastapi import APIRouter, Depends, Query
-from sehaty.core.controllers.admin import AdminController
+from sehaty.core.controllers.admin import (
+    AdminController,
+    PendingProfessional,
+    SubscriptionRow,
+    UserRow,
+)
 from sehaty.core.controllers.appointments import AppointmentController
 from sehaty.core.controllers.reviews import ReviewController
 from sehaty.db import User, UserRole
 
 from deps import require_roles
-from schemas.admin import AdminSubscriptionOut, AdminUserOut, PendingProfessionalOut
 from schemas.reviews import ReviewModerateIn, ReviewOut
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
@@ -33,19 +37,18 @@ def run_reminders(
     return {"reminded": AppointmentController.run_reminders(within_hours=within_hours)}
 
 
-@router.get("/professionals", response_model=list[PendingProfessionalOut])
+@router.get("/professionals", response_model=list[PendingProfessional])
 def list_professionals(
     pending: bool = Query(default=True),
     _admin: User = Depends(_require_admin),
-) -> list[PendingProfessionalOut]:
+) -> list[PendingProfessional]:
     """List professionals awaiting accreditation.
 
     ``pending`` is accepted at the boundary for the wider listing the core will
     grow; today only the pending queue is served. Parse -> controller ->
     serialize.
     """
-    professionals = AdminController.list_pending_professionals()
-    return [PendingProfessionalOut.model_validate(p) for p in professionals]
+    return AdminController.list_pending_professionals()
 
 
 @router.post("/professionals/{user_id}/accredit")
@@ -68,37 +71,35 @@ def revoke_professional(
     return {"ok": True}
 
 
-@router.get("/users", response_model=list[AdminUserOut])
+@router.get("/users", response_model=list[UserRow])
 def list_users(
     role: str | None = Query(default=None),
     is_active: bool | None = Query(default=None),
     limit: int = Query(default=100),
     offset: int = Query(default=0),
     _admin: User = Depends(_require_admin),
-) -> list[AdminUserOut]:
+) -> list[UserRow]:
     """List platform users for the admin Users page, newest first.
 
     Optional ``role`` / ``is_active`` filters narrow the set. Parse ->
     controller -> serialize.
     """
-    users = AdminController.list_users(role=role, is_active=is_active, limit=limit, offset=offset)
-    return [AdminUserOut.model_validate(u) for u in users]
+    return AdminController.list_users(role=role, is_active=is_active, limit=limit, offset=offset)
 
 
-@router.get("/subscriptions", response_model=list[AdminSubscriptionOut])
+@router.get("/subscriptions", response_model=list[SubscriptionRow])
 def list_subscriptions(
     status: str | None = Query(default=None),
     limit: int = Query(default=100),
     offset: int = Query(default=0),
     _admin: User = Depends(_require_admin),
-) -> list[AdminSubscriptionOut]:
+) -> list[SubscriptionRow]:
     """List subscriptions for the admin Subscriptions page, newest first.
 
     Optional ``status`` filter narrows the set. Parse -> controller ->
     serialize.
     """
-    subscriptions = AdminController.list_subscriptions(status=status, limit=limit, offset=offset)
-    return [AdminSubscriptionOut.model_validate(s) for s in subscriptions]
+    return AdminController.list_subscriptions(status=status, limit=limit, offset=offset)
 
 
 @router.get("/reviews", response_model=list[ReviewOut])
