@@ -1,0 +1,13 @@
+# Caddy auto-provisions and renews a Let's Encrypt certificate for
+# {$SEHATY_API_HOST} and reverse-proxies HTTPS traffic to the API container.
+# Requires ports 80 and 443 reachable from the internet and a hostname that
+# resolves to this droplet (a real domain, or a free api.<ip>.sslip.io host).
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$SEHATY_API_HOST} {
+	encode gzip
+	reverse_proxy api:8000
+}
