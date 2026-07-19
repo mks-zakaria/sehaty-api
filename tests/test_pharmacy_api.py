@@ -7,7 +7,14 @@ up by code and dispenses part of it over HTTP.
 from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
-from sehaty.db import Prescription, PrescriptionItem, PrescriptionStatus, User, UserRole
+from sehaty.db import (
+    Medication,
+    Prescription,
+    PrescriptionItem,
+    PrescriptionStatus,
+    User,
+    UserRole,
+)
 from sqlalchemy.orm import Session, sessionmaker
 
 _NOW = datetime(2026, 8, 3, 9, 0, tzinfo=UTC)
@@ -85,6 +92,33 @@ def test_pharmacy_lookup_and_dispense(client: TestClient, db: sessionmaker[Sessi
         headers=h,
     )
     assert over.status_code == 409, over.text
+
+
+def test_pharmacy_stock_management(client: TestClient, db: sessionmaker[Session]) -> None:
+    token = _register_pharmacy(client)
+    h = _auth(token)
+    with db() as s:
+        med = Medication(inn_name="Ibuprofen", form="tablet")
+        s.add(med)
+        s.commit()
+        med_id = med.id
+
+    assert client.get("/api/v1/pharmacy/stock", headers=h).json() == []
+
+    saved = client.post(
+        "/api/v1/pharmacy/stock",
+        json={"medication_id": med_id, "quantity": 3, "low_threshold": 5},
+        headers=h,
+    )
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["is_low"] is True
+
+    listed = client.get("/api/v1/pharmacy/stock", headers=h).json()
+    assert len(listed) == 1 and listed[0]["medication"] == "Ibuprofen"
+    assert len(client.get("/api/v1/pharmacy/stock?low=true", headers=h).json()) == 1
+
+    meds = client.get("/api/v1/pharmacy/medications?q=ibu", headers=h).json()
+    assert any(m["id"] == med_id for m in meds)
 
 
 def test_pharmacy_endpoints_require_auth(client: TestClient) -> None:
