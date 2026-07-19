@@ -71,6 +71,9 @@ def list_directory(
     specialty: str | None = Query(
         default=None, description="Optional specialty slug to narrow the listing."
     ),
+    q: str | None = Query(
+        default=None, description="Optional doctor-name filter (type then name)."
+    ),
     sort: str = Query(default="rating", description="One of 'rating', 'reviews', 'name'."),
     limit: int = Query(default=20, description="Maximum doctors per page."),
     offset: int = Query(default=0, description="Number of doctors to skip (pagination)."),
@@ -85,6 +88,7 @@ def list_directory(
     """
     return DoctorDirectoryController.list_directory(
         specialty=specialty,
+        query=q,
         sort=sort,
         limit=limit,
         offset=offset,
