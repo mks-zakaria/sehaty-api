@@ -8,7 +8,7 @@ taxonomy) are mapped to HTTP by the global exception handler in `main`.
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Response, status
-from sehaty.core.controllers.availability import AvailabilityController
+from sehaty.core.controllers.availability import AvailabilityController, AvailabilityRow
 from sehaty.core.controllers.availability_exceptions import (
     AvailabilityExceptionController,
     ExceptionRow,
@@ -19,7 +19,6 @@ from deps import require_roles
 from schemas.availability import (
     AvailabilityExceptionIn,
     AvailabilityIn,
-    AvailabilityOut,
 )
 
 router = APIRouter(prefix="/api/v1/doctors/me/availability", tags=["availability"])
@@ -27,26 +26,25 @@ router = APIRouter(prefix="/api/v1/doctors/me/availability", tags=["availability
 _require_doctor = require_roles(UserRole.DOCTOR)
 
 
-@router.post("", response_model=AvailabilityOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=AvailabilityRow, status_code=status.HTTP_201_CREATED)
 def add_availability(
     body: AvailabilityIn,
     user: User = Depends(_require_doctor),
-) -> AvailabilityOut:
+) -> AvailabilityRow:
     """Add a recurring weekly availability window for the calling doctor."""
-    avail = AvailabilityController.add(
+    return AvailabilityController.add(
         user.id,
         body.weekday,
         body.start_time,
         body.end_time,
         body.slot_minutes,
     )
-    return AvailabilityOut.model_validate(avail)
 
 
-@router.get("", response_model=list[AvailabilityOut])
-def list_availability(user: User = Depends(_require_doctor)) -> list[AvailabilityOut]:
+@router.get("", response_model=list[AvailabilityRow])
+def list_availability(user: User = Depends(_require_doctor)) -> list[AvailabilityRow]:
     """List the calling doctor's availability windows."""
-    return [AvailabilityOut.model_validate(a) for a in AvailabilityController.list(user.id)]
+    return AvailabilityController.list(user.id)
 
 
 @router.delete("/{availability_id}", status_code=status.HTTP_204_NO_CONTENT)

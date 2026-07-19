@@ -1,12 +1,13 @@
-"""Request/response DTOs for the doctor-availability surface.
+"""Request DTOs for the doctor-availability surface.
 
-No business logic, no DB access. `*In` models parse the request body; `*Out`
-models translate a `sehaty.db.Availability` ORM row into the JSON contract.
+No business logic, no DB access. `*In` models parse the request body; the
+response contract is the core controller's `AvailabilityRow` projection, used
+directly as the router's `response_model`.
 """
 
 from datetime import date, time
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class AvailabilityIn(BaseModel):
@@ -20,18 +21,6 @@ class AvailabilityIn(BaseModel):
     start_time: time
     end_time: time
     slot_minutes: int = 30
-
-
-class AvailabilityOut(BaseModel):
-    """One of a doctor's recurring availability windows."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    weekday: int
-    start_time: time
-    end_time: time
-    slot_minutes: int
 
 
 class AvailabilityExceptionIn(BaseModel):
