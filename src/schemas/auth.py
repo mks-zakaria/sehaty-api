@@ -24,6 +24,14 @@ class DoctorRegisterIn(BaseModel):
     referral_code: str | None = None
 
 
+class PharmacyRegisterIn(BaseModel):
+    """Pharmacy self-registration: email + password credentials."""
+
+    email: str
+    password: str
+    phone: str | None = None
+
+
 class LoginIn(BaseModel):
     """Email + password login (doctors/admins)."""
 

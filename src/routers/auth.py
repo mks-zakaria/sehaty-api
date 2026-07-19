@@ -17,6 +17,7 @@ from schemas.auth import (
     LoginIn,
     OtpRequestIn,
     OtpVerifyIn,
+    PharmacyRegisterIn,
     RefreshIn,
     TokenOut,
 )
@@ -43,6 +44,14 @@ def register_doctor(body: DoctorRegisterIn) -> MeView:
     if body.referral_code:
         ReferralController.record_referral(body.referral_code, user.id)
     return user
+
+
+@router.post("/pharmacy/register", response_model=MeView, status_code=status.HTTP_201_CREATED)
+def register_pharmacy(body: PharmacyRegisterIn) -> MeView:
+    """Register a pharmacy account. Parse -> controller -> serialize."""
+    return AuthController.register_pharmacy(
+        email=body.email, password=body.password, phone=body.phone
+    )
 
 
 @router.post("/login", response_model=TokenOut)
