@@ -1,0 +1,80 @@
+# Sehaty pilot stack: Postgres+PostGIS, a one-shot migrator, the API, and Caddy
+# (auto-HTTPS reverse proxy). The front-end is deployed separately on Vercel.
+#
+# The API image is built from ../../sehaty-api/Dockerfile with the MONOREPO ROOT
+# as the build context (context: ../..), because sehaty-api depends on its
+# sibling repos sehaty-core and sehaty-db as path deps. So on the droplet the
+# three repos must sit as siblings:
+#   <root>/sehaty-api  <root>/sehaty-core  <root>/sehaty-db
+#
+# Usage (from this deploy/ directory):
+#   cp .env.example .env      # then edit the secrets
+#   docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+name: sehaty
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sehaty}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-sehaty}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sehaty} -d ${POSTGRES_DB:-sehaty}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # One-shot: bring the schema to head, then exit. The API never migrates on boot
+  # (schema is owned by sehaty-db); this is that out-of-band step, wired in.
+  migrate:
+    image: sehaty-api:local
+    build:
+      context: ../..
+      dockerfile: sehaty-api/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env}
+    command: ["alembic", "-c", "/sehaty-db/src/sehaty/db/_migrations/alembic.ini", "upgrade", "head"]
+    restart: "no"
+
+  api:
+    image: sehaty-api:local
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?}
+      # The secret that SIGNS tokens (sehaty.core.config reads SEHATY_JWT_SECRET).
+      SEHATY_JWT_SECRET: ${SEHATY_JWT_SECRET:?set SEHATY_JWT_SECRET in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      SEHATY_ENV: ${SEHATY_ENV:-prod}
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      SEHATY_API_HOST: ${SEHATY_API_HOST:?set SEHATY_API_HOST in .env}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
