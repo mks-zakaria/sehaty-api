@@ -12,9 +12,10 @@ from sehaty.core.controllers.appointments import (
     ConsultationRow,
     WaitingPatientRow,
 )
+from sehaty.core.controllers.cabinet import CabinetController, CabinetSessionRow
 from sehaty.db import User, UserRole
 
-from deps import require_roles
+from deps import get_acting_doctor_id, require_roles
 from schemas.cabinet import CheckInIn, CompleteConsultationIn
 
 router = APIRouter(prefix="/api/v1/consultations", tags=["consultations"])
@@ -22,6 +23,18 @@ router = APIRouter(prefix="/api/v1/consultations", tags=["consultations"])
 _require_doctor = require_roles(UserRole.DOCTOR)
 # The front desk: the doctor themselves or their secretary (assistant).
 _require_desk = require_roles(UserRole.DOCTOR, UserRole.ASSISTANT)
+
+
+@router.get("/active-session", response_model=CabinetSessionRow | None)
+def active_session(
+    acting_doctor_id: int = Depends(get_acting_doctor_id),
+) -> CabinetSessionRow | None:
+    """The open cabinet session for the acting doctor (owner or a secretary's doctor).
+
+    Lets a secretary discover the online session so they can check patients in;
+    returns null when nobody is online.
+    """
+    return CabinetController.active_session_for_owner(acting_doctor_id)
 
 
 @router.get("/queue", response_model=list[WaitingPatientRow])
