@@ -132,7 +132,7 @@ def test_specialties_endpoint_lists_seeded_catalogue(
     rows = resp.json()
     assert len(rows) == seeded
     row = rows[0]
-    assert set(row) == {"id", "slug", "name_en", "name_fr", "name_ar"}
+    assert set(row) == {"id", "slug", "name_en", "name_fr", "name_ar", "name_ary"}
     assert "cardiology" in {r["slug"] for r in rows}
 
 
