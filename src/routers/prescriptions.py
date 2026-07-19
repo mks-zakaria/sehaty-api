@@ -11,7 +11,8 @@ Business errors (the SehatyError taxonomy) are mapped to HTTP by the handler in
 ``main``.
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
+from sehaty.core.controllers.medications import MedicationController, MedicationRow
 from sehaty.core.controllers.prescriptions import (
     PrescriptionController,
     PrescriptionDetail,
@@ -26,6 +27,15 @@ router = APIRouter(tags=["prescriptions"])
 
 _require_doctor = require_roles(UserRole.DOCTOR)
 _require_patient = require_roles(UserRole.PATIENT)
+
+
+@router.get("/api/v1/doctor/medications", response_model=list[MedicationRow])
+def search_medications(
+    q: str = Query(default="", description="INN / brand name query."),
+    _user: User = Depends(_require_doctor),
+) -> list[MedicationRow]:
+    """Search the medication catalogue for the prescribe autocomplete."""
+    return MedicationController.search(q)
 
 
 @router.post(
