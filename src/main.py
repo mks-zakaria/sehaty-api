@@ -32,6 +32,7 @@ from routers.feedback import router as feedback_router
 from routers.messages import router as messages_router
 from routers.notifications import router as notifications_router
 from routers.patients import router as patients_router
+from routers.pharmacy import router as pharmacy_router
 from routers.practice import router as practice_router
 from routers.prescription_templates import router as prescription_templates_router
 from routers.prescriptions import router as prescriptions_router
@@ -103,3 +104,4 @@ app.include_router(clinic_messages_router)
 app.include_router(cabinets_router)
 app.include_router(consultations_router)
 app.include_router(export_router)
+app.include_router(pharmacy_router)
