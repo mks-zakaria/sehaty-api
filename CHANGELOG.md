@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.32.0 (2026-07-19)
+
+### Features
+
+- **api**: Doctor Excel-export endpoint (.xlsx, dependency-free)
+  ([#96](https://github.com/mks-zakaria/sehaty-api/pull/96),
+  [`37eb6af`](https://github.com/mks-zakaria/sehaty-api/commit/37eb6af65745fb51e8ec91c5177d14beca1d5bf5))
+
+
 ## v1.31.0 (2026-07-19)
 
 ### Features
