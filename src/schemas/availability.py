@@ -26,11 +26,12 @@ class AvailabilityIn(BaseModel):
 class AvailabilityExceptionIn(BaseModel):
     """A date-specific override the calling doctor adds to their weekly schedule.
 
-    ``kind`` is ``BLOCK`` (close a day or window) or ``OPEN`` (add a one-off
-    window). The cross-field rules (OPEN needs times + a positive
-    ``slot_minutes``; a timed BLOCK needs both bounds well-ordered) live in
-    ``AvailabilityExceptionController.add`` — an invalid combination surfaces as
-    a ``SehatyValidationError`` mapped to 400 by the global handler.
+    ``kind`` is ``BLOCK`` (close a day or window), ``OPEN`` (add a one-off
+    window), or ``CAP`` (limit that date to ``max_patients`` bookings). The
+    cross-field rules (OPEN needs times + a positive ``slot_minutes``; a timed
+    BLOCK needs both bounds well-ordered; CAP needs a positive ``max_patients``)
+    live in ``AvailabilityExceptionController.add`` — an invalid combination
+    surfaces as a ``SehatyValidationError`` mapped to 400 by the global handler.
     """
 
     date: date
@@ -38,4 +39,5 @@ class AvailabilityExceptionIn(BaseModel):
     start_time: time | None = None
     end_time: time | None = None
     slot_minutes: int | None = None
+    max_patients: int | None = None
     reason: str | None = None
