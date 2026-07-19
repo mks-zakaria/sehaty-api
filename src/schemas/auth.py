@@ -32,6 +32,20 @@ class PharmacyRegisterIn(BaseModel):
     phone: str | None = None
 
 
+class PatientRegisterIn(BaseModel):
+    """Patient self-registration: phone + password (no OTP for now)."""
+
+    phone: str
+    password: str
+
+
+class PatientLoginIn(BaseModel):
+    """Patient phone + password login."""
+
+    phone: str
+    password: str
+
+
 class LoginIn(BaseModel):
     """Email + password login (doctors/admins)."""
 

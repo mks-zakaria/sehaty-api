@@ -17,6 +17,8 @@ from schemas.auth import (
     LoginIn,
     OtpRequestIn,
     OtpVerifyIn,
+    PatientLoginIn,
+    PatientRegisterIn,
     PharmacyRegisterIn,
     RefreshIn,
     TokenOut,
@@ -59,6 +61,24 @@ def login(body: LoginIn, request: Request) -> TokenOut:
     """Email/password login → access + refresh token pair."""
     bundle = AuthController.login(
         body.email, body.password, user_agent=request.headers.get("user-agent")
+    )
+    return TokenOut(**bundle)
+
+
+@router.post("/patient/register", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
+def register_patient(body: PatientRegisterIn, request: Request) -> TokenOut:
+    """Patient sign-up with phone + password (no OTP) → tokens (auto-login)."""
+    bundle = AuthController.register_patient(
+        body.phone, body.password, user_agent=request.headers.get("user-agent")
+    )
+    return TokenOut(**bundle)
+
+
+@router.post("/patient/login", response_model=TokenOut)
+def login_patient(body: PatientLoginIn, request: Request) -> TokenOut:
+    """Patient phone + password login → access + refresh token pair."""
+    bundle = AuthController.login_patient(
+        body.phone, body.password, user_agent=request.headers.get("user-agent")
     )
     return TokenOut(**bundle)
 
