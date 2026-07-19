@@ -12,11 +12,11 @@ exception handler in ``main``.
 
 from fastapi import APIRouter, Depends
 from sehaty.core.controllers.billing import BillingController
-from sehaty.core.controllers.referral import ReferralController
+from sehaty.core.controllers.referral import ReferralController, ReferralRow
 from sehaty.db import User, UserRole
 
 from deps import require_roles
-from schemas.referral import ReferralCodeOut, ReferralOut, ReferralSummaryOut
+from schemas.referral import ReferralCodeOut, ReferralSummaryOut
 
 router = APIRouter(prefix="/api/v1/referrals", tags=["referrals"])
 
@@ -36,8 +36,8 @@ def my_referrals(
     doctor: User = Depends(_require_doctor),
 ) -> ReferralSummaryOut:
     """The calling doctor's credit balance and the referrals they made (oldest first)."""
-    referrals = ReferralController.list_for_referrer(doctor.id)
+    referrals: list[ReferralRow] = ReferralController.list_for_referrer(doctor.id)
     return ReferralSummaryOut(
         credit_balance=BillingController.credit_balance(doctor.id),
-        referrals=[ReferralOut.model_validate(r) for r in referrals],
+        referrals=referrals,
     )
