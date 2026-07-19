@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v1.33.0 (2026-07-19)
+
+### Features
+
+- **api**: Pharmacy register + dispensing endpoints
+  ([#102](https://github.com/mks-zakaria/sehaty-api/pull/102),
+  [`6f624a9`](https://github.com/mks-zakaria/sehaty-api/commit/6f624a9a7306376cea9e6ddae8ac1a05e371aea2))
+
+### Testing
+
+- **api**: Assert Prescription Items sheet in the export
+  ([#100](https://github.com/mks-zakaria/sehaty-api/pull/100),
+  [`788763c`](https://github.com/mks-zakaria/sehaty-api/commit/788763c0a56df7466d5ea08e68bff0667aa121e2))
+
+- **api**: Assert Reviews & Billing sheets in the export download
+  ([#98](https://github.com/mks-zakaria/sehaty-api/pull/98),
+  [`eabba2f`](https://github.com/mks-zakaria/sehaty-api/commit/eabba2f27d7d525358b9bb7e1d8af5f93c0778dd))
+
+
 ## v1.32.0 (2026-07-19)
 
 ### Features
