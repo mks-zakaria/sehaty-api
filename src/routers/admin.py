@@ -15,11 +15,11 @@ from sehaty.core.controllers.admin import (
     UserRow,
 )
 from sehaty.core.controllers.appointments import AppointmentController
-from sehaty.core.controllers.reviews import ReviewController
+from sehaty.core.controllers.reviews import ReviewController, ReviewRow
 from sehaty.db import User, UserRole
 
 from deps import require_roles
-from schemas.reviews import ReviewModerateIn, ReviewOut
+from schemas.reviews import ReviewModerateIn
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
@@ -102,21 +102,19 @@ def list_subscriptions(
     return AdminController.list_subscriptions(status=status, limit=limit, offset=offset)
 
 
-@router.get("/reviews", response_model=list[ReviewOut])
+@router.get("/reviews", response_model=list[ReviewRow])
 def list_review_queue(
     _admin: User = Depends(_require_admin),
-) -> list[ReviewOut]:
+) -> list[ReviewRow]:
     """List every PENDING or FLAGGED review awaiting moderation, newest first."""
-    reviews = ReviewController.list_moderation_queue()
-    return [ReviewOut.model_validate(r) for r in reviews]
+    return ReviewController.list_moderation_queue()
 
 
-@router.post("/reviews/{review_id}/moderate", response_model=ReviewOut)
+@router.post("/reviews/{review_id}/moderate", response_model=ReviewRow)
 def moderate_review(
     review_id: int,
     body: ReviewModerateIn,
     admin: User = Depends(_require_admin),
-) -> ReviewOut:
+) -> ReviewRow:
     """Publish or remove a review, recomputing the target's reputation."""
-    review = ReviewController.moderate(admin.id, review_id, body.action)
-    return ReviewOut.model_validate(review)
+    return ReviewController.moderate(admin.id, review_id, body.action)

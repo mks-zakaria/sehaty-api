@@ -1,16 +1,15 @@
-"""Request/response DTOs for the reviews surface — boundary translation.
+"""Request DTOs for the reviews surface — boundary translation.
 
-No business logic, no DB access. ``*In`` models parse the request body; the
-``*Out`` model translates a ``sehaty.db.Review`` ORM row into the JSON contract
-clients consume. The booking gate, moderation state machine and reputation
-recompute all live in ``ReviewController``.
+No business logic, no DB access. ``*In`` models parse the request body. The
+outbound contract is served directly by ``ReviewController``'s ``ReviewRow``
+projection (no ``*Out`` mirror). The booking gate, moderation state machine and
+reputation recompute all live in ``ReviewController``.
 """
 
-from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
-from sehaty.db import ReviewDirection, ReviewStatus
+from pydantic import BaseModel, Field
+from sehaty.db import ReviewDirection
 
 
 class ReviewIn(BaseModel):
@@ -36,21 +35,3 @@ class ReviewModerateIn(BaseModel):
     """An admin moderation decision (the ``POST /admin/reviews/{id}/moderate`` body)."""
 
     action: Literal["PUBLISH", "REMOVE"]
-
-
-class ReviewOut(BaseModel):
-    """A review as seen on the wire (public list, moderation queue, or mutations)."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    author_id: int
-    target_id: int
-    appointment_id: int
-    direction: ReviewDirection
-    stars: int
-    comment: str | None = None
-    status: ReviewStatus
-    reply: str | None = None
-    reply_at: datetime | None = None
-    created_at: datetime
