@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.41.0 (2026-07-19)
+
+### Features
+
+- **api**: Pharmacy sales report endpoint
+  ([#120](https://github.com/mks-zakaria/sehaty-api/pull/120),
+  [`5378a3a`](https://github.com/mks-zakaria/sehaty-api/commit/5378a3a462c530b622282921d2503db3b9252011))
+
+
 ## v1.40.0 (2026-07-19)
 
 ### Features
