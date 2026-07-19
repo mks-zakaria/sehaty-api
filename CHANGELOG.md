@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.42.0 (2026-07-19)
+
+### Features
+
+- **api**: Patient phone+password auth endpoints
+  ([#122](https://github.com/mks-zakaria/sehaty-api/pull/122),
+  [`c481fcb`](https://github.com/mks-zakaria/sehaty-api/commit/c481fcbffbe900e6430cf8fb0484e74532ff7e23))
+
+
 ## v1.41.0 (2026-07-19)
 
 ### Features
