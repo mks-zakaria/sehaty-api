@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.34.0 (2026-07-19)
+
+### Features
+
+- **api**: Pharmacy stock endpoints ([#104](https://github.com/mks-zakaria/sehaty-api/pull/104),
+  [`27c6bf5`](https://github.com/mks-zakaria/sehaty-api/commit/27c6bf5e11df33a9988d214a19c6b8042af58506))
+
+
 ## v1.33.0 (2026-07-19)
 
 ### Features
