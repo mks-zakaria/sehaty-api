@@ -115,6 +115,30 @@ def test_cabinet_consultation_flow(client: TestClient, db: sessionmaker[Session]
     assert client.get("/api/v1/consultations/queue", headers=h).json() == []
 
 
+def test_waiting_count_threshold_and_alert(client: TestClient, db: sessionmaker[Session]) -> None:
+    doctor_id, token = _register_doctor(client)
+    h = _auth(token)
+    cab = client.post("/api/v1/cabinets", json={"name": "WR"}, headers=h).json()
+    cid = cab["id"]
+
+    # Doctor sets an alert threshold.
+    thr = client.put(f"/api/v1/cabinets/{cid}/alert-threshold", json={"threshold": 3}, headers=h)
+    assert thr.status_code == 200, thr.text
+    assert thr.json()["waiting_alert_threshold"] == 3
+
+    # Below the threshold: count updates, no alert.
+    r = client.post(f"/api/v1/cabinets/{cid}/waiting-count", json={"count": 2}, headers=h)
+    assert r.status_code == 200, r.text
+    assert r.json()["waiting_room_count"] == 2
+    assert client.get("/api/v1/notifications?unread_only=true", headers=h).json() == []
+
+    # Crossing the threshold while offline: the owner is alerted.
+    r = client.post(f"/api/v1/cabinets/{cid}/waiting-count", json={"count": 4}, headers=h)
+    assert r.json()["waiting_room_count"] == 4
+    notifs = client.get("/api/v1/notifications", headers=h).json()
+    assert any(n["kind"] == "waiting_room_alert" for n in notifs)
+
+
 def test_active_session_endpoint(client: TestClient, db: sessionmaker[Session]) -> None:
     _doctor_id, token = _register_doctor(client)
     h = _auth(token)

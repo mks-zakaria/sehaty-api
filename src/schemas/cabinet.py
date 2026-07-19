@@ -28,6 +28,18 @@ class CheckInIn(BaseModel):
     cabinet_session_id: int
 
 
+class WaitingCountIn(BaseModel):
+    """Secretary sets how many people are in the waiting room right now."""
+
+    count: int
+
+
+class AlertThresholdIn(BaseModel):
+    """Doctor sets the waiting-room alert threshold (null disables the alert)."""
+
+    threshold: int | None = None
+
+
 class CompleteConsultationIn(BaseModel):
     """The structured consultation record the doctor saves on completion."""
 
