@@ -12,10 +12,16 @@ from sehaty.core.controllers.pharmacy import (
     PharmacyPrescriptionView,
     StockRow,
 )
+from sehaty.core.controllers.products import (
+    ProductController,
+    ProductRow,
+    SaleController,
+    SaleRow,
+)
 from sehaty.db import User, UserRole
 
 from deps import require_roles
-from schemas.pharmacy import DispenseIn, StockIn
+from schemas.pharmacy import DispenseIn, ProductIn, RestockIn, SaleIn, StockIn
 
 router = APIRouter(prefix="/api/v1/pharmacy", tags=["pharmacy"])
 
@@ -66,3 +72,57 @@ def search_medications(
 ) -> list[MedicationRow]:
     """Search the medication catalogue by INN / brand name (for the add-stock picker)."""
     return PharmacyController.search_medications(q)
+
+
+# --- Point-of-sale: products + sales -------------------------------------
+
+
+@router.get("/products", response_model=list[ProductRow])
+def list_products(
+    search: str | None = Query(default=None),
+    low: bool = Query(default=False),
+    user: User = Depends(_require_pharmacy),
+) -> list[ProductRow]:
+    """The pharmacy's over-the-counter catalogue (filter by name/barcode, low-only)."""
+    return ProductController.list_products(user.id, search=search, low_only=low)
+
+
+@router.get("/products/{barcode}", response_model=ProductRow)
+def lookup_product(barcode: str, user: User = Depends(_require_pharmacy)) -> ProductRow:
+    """Scan a barcode to see a product's full info (404 if unknown)."""
+    return ProductController.lookup(user.id, barcode)
+
+
+@router.post("/products", response_model=ProductRow)
+def register_product(body: ProductIn, user: User = Depends(_require_pharmacy)) -> ProductRow:
+    """Register (or update, by barcode) a MEDICINE or COSMETIC product."""
+    return ProductController.register(
+        user.id,
+        body.barcode,
+        body.name,
+        body.kind,
+        medication_id=body.medication_id,
+        price=body.price,
+        quantity=body.quantity,
+        low_threshold=body.low_threshold,
+    )
+
+
+@router.post("/products/restock", response_model=ProductRow)
+def restock_product(body: RestockIn, user: User = Depends(_require_pharmacy)) -> ProductRow:
+    """Add received stock to a product."""
+    return ProductController.restock(user.id, body.product_id, body.add)
+
+
+@router.get("/sales", response_model=list[SaleRow])
+def list_sales(
+    limit: int = Query(default=50, le=200), user: User = Depends(_require_pharmacy)
+) -> list[SaleRow]:
+    """Recent sales (newest first) — the sales history."""
+    return SaleController.list_sales(user.id, limit=limit)
+
+
+@router.post("/sales", response_model=SaleRow)
+def record_sale(body: SaleIn, user: User = Depends(_require_pharmacy)) -> SaleRow:
+    """Record a sale of a scanned basket (409 if a product is out of stock)."""
+    return SaleController.sell(user.id, [line.model_dump() for line in body.lines])
