@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.35.0 (2026-07-19)
+
+### Features
+
+- **api**: Directory name filter (type then name)
+  ([#106](https://github.com/mks-zakaria/sehaty-api/pull/106),
+  [`b4f98c6`](https://github.com/mks-zakaria/sehaty-api/commit/b4f98c6d6fce9161bc61ac240469e97b57bf7881))
+
+
 ## v1.34.0 (2026-07-19)
 
 ### Features
