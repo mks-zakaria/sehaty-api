@@ -41,6 +41,23 @@ def add_availability(
     )
 
 
+@router.put("/{availability_id}", response_model=AvailabilityRow)
+def update_availability(
+    availability_id: int,
+    body: AvailabilityIn,
+    user: User = Depends(_require_doctor),
+) -> AvailabilityRow:
+    """Adjust one of the calling doctor's weekly windows in place (ownership-checked)."""
+    return AvailabilityController.update(
+        user.id,
+        availability_id,
+        body.weekday,
+        body.start_time,
+        body.end_time,
+        body.slot_minutes,
+    )
+
+
 @router.get("", response_model=list[AvailabilityRow])
 def list_availability(user: User = Depends(_require_doctor)) -> list[AvailabilityRow]:
     """List the calling doctor's availability windows."""
@@ -79,7 +96,7 @@ def add_exception(
     body: AvailabilityExceptionIn,
     user: User = Depends(_require_doctor),
 ) -> ExceptionRow:
-    """Add a date-specific BLOCK/OPEN exception for the calling doctor."""
+    """Add a date-specific BLOCK/OPEN/CAP exception for the calling doctor."""
     return AvailabilityExceptionController.add(
         user.id,
         body.date,
@@ -88,6 +105,27 @@ def add_exception(
         end_time=body.end_time,
         slot_minutes=body.slot_minutes,
         reason=body.reason,
+        max_patients=body.max_patients,
+    )
+
+
+@router.put("/exceptions/{exception_id}", response_model=ExceptionRow)
+def update_exception(
+    exception_id: int,
+    body: AvailabilityExceptionIn,
+    user: User = Depends(_require_doctor),
+) -> ExceptionRow:
+    """Replace one of the calling doctor's exceptions in place (ownership-checked)."""
+    return AvailabilityExceptionController.update(
+        user.id,
+        exception_id,
+        body.date,
+        body.kind,
+        start_time=body.start_time,
+        end_time=body.end_time,
+        slot_minutes=body.slot_minutes,
+        reason=body.reason,
+        max_patients=body.max_patients,
     )
 
 
