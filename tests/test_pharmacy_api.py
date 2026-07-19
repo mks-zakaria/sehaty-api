@@ -121,6 +121,34 @@ def test_pharmacy_stock_management(client: TestClient, db: sessionmaker[Session]
     assert any(m["id"] == med_id for m in meds)
 
 
+def test_pharmacy_register_sell_and_report(client: TestClient, db: sessionmaker[Session]) -> None:
+    token = _register_pharmacy(client)
+    h = _auth(token)
+
+    # Register a product and sell some of it.
+    client.post(
+        "/api/v1/pharmacy/products",
+        json={"barcode": "60001", "name": "Doliprane", "kind": "MEDICINE", "price": 20.0,
+              "quantity": 30},
+        headers=h,
+    )
+    sale = client.post(
+        "/api/v1/pharmacy/sales",
+        json={"lines": [{"barcode": "60001", "quantity": 2}]},
+        headers=h,
+    )
+    assert sale.status_code == 200, sale.text
+    assert sale.json()["total"] == 40.0
+
+    rep = client.get("/api/v1/pharmacy/sales/report?days=7", headers=h)
+    assert rep.status_code == 200, rep.text
+    body = rep.json()
+    assert body["today_count"] == 1
+    assert body["today_total"] == 40.0
+    assert body["top_products"][0]["name"] == "Doliprane"
+    assert body["top_products"][0]["quantity"] == 2
+
+
 def test_pharmacy_endpoints_require_auth(client: TestClient) -> None:
     # No token -> 401.
     assert client.get("/api/v1/pharmacy/prescriptions/ANY").status_code == 401

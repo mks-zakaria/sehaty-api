@@ -17,6 +17,7 @@ from sehaty.core.controllers.products import (
     ProductRow,
     SaleController,
     SaleRow,
+    SalesReport,
 )
 from sehaty.db import User, UserRole
 
@@ -112,6 +113,14 @@ def register_product(body: ProductIn, user: User = Depends(_require_pharmacy)) -
 def restock_product(body: RestockIn, user: User = Depends(_require_pharmacy)) -> ProductRow:
     """Add received stock to a product."""
     return ProductController.restock(user.id, body.product_id, body.add)
+
+
+@router.get("/sales/report", response_model=SalesReport)
+def sales_report(
+    days: int = Query(default=7, ge=1, le=365), user: User = Depends(_require_pharmacy)
+) -> SalesReport:
+    """Sales totals: today, the trailing period, and top products."""
+    return SaleController.report(user.id, days=days)
 
 
 @router.get("/sales", response_model=list[SaleRow])
