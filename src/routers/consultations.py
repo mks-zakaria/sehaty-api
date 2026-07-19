@@ -12,7 +12,7 @@ from sehaty.core.controllers.appointments import (
     ConsultationRow,
     WaitingPatientRow,
 )
-from sehaty.core.controllers.cabinet import CabinetController, CabinetSessionRow
+from sehaty.core.controllers.cabinet import CabinetController, CabinetRow, CabinetSessionRow
 from sehaty.db import User, UserRole
 
 from deps import get_acting_doctor_id, require_roles
@@ -35,6 +35,18 @@ def active_session(
     returns null when nobody is online.
     """
     return CabinetController.active_session_for_owner(acting_doctor_id)
+
+
+@router.get("/cabinets", response_model=list[CabinetRow])
+def desk_cabinets(
+    acting_doctor_id: int = Depends(get_acting_doctor_id),
+) -> list[CabinetRow]:
+    """The acting doctor's cabinets (desk-accessible).
+
+    Lets a secretary read the waiting-room count / alert threshold and set the
+    count even when nobody is online yet (e.g. first thing in the morning).
+    """
+    return CabinetController.list_for_owner(acting_doctor_id)
 
 
 @router.get("/queue", response_model=list[WaitingPatientRow])
