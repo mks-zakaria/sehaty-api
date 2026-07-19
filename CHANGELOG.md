@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.37.0 (2026-07-19)
+
+### Features
+
+- **api**: Pharmacy POS endpoints — products + sales
+  ([#110](https://github.com/mks-zakaria/sehaty-api/pull/110),
+  [`19e6c32`](https://github.com/mks-zakaria/sehaty-api/commit/19e6c3277f8b11c29ea880e5261d19bd209829a4))
+
+
 ## v1.36.0 (2026-07-19)
 
 ### Features
