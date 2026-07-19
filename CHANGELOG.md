@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.31.0 (2026-07-19)
+
+### Features
+
+- **api**: Staff-accessible active-session endpoint
+  ([#94](https://github.com/mks-zakaria/sehaty-api/pull/94),
+  [`4d02399`](https://github.com/mks-zakaria/sehaty-api/commit/4d023998801b5342e762ddb9479b1348d1de027d))
+
+
 ## v1.30.0 (2026-07-19)
 
 ### Features
