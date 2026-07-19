@@ -2,6 +2,77 @@
 
 <!-- version list -->
 
+## v1.30.0 (2026-07-19)
+
+### Features
+
+- **api**: Cabinet + consultation endpoints
+  ([#92](https://github.com/mks-zakaria/sehaty-api/pull/92),
+  [`4e4559f`](https://github.com/mks-zakaria/sehaty-api/commit/4e4559fb44b6a40b594ad91cadd00f4465306ef2))
+
+### Refactoring
+
+- **api**: Serve /me and register from MeView projection
+  ([#90](https://github.com/mks-zakaria/sehaty-api/pull/90),
+  [`c02e48b`](https://github.com/mks-zakaria/sehaty-api/commit/c02e48bce29d4d400d54b85ca97b68e74e1056ce))
+
+- **api**: Serve analytics response from core projection
+  ([#62](https://github.com/mks-zakaria/sehaty-api/pull/62),
+  [`d1c2bf8`](https://github.com/mks-zakaria/sehaty-api/commit/d1c2bf845ed25dc54ff91e21643ddd8e3be067a7))
+
+- **api**: Serve appointment responses from core projections
+  ([#64](https://github.com/mks-zakaria/sehaty-api/pull/64),
+  [`ef657ee`](https://github.com/mks-zakaria/sehaty-api/commit/ef657ee4ddb81ffc99c9b440f523580195b4a2b2))
+
+- **api**: Serve availability & template responses from core projections
+  ([#74](https://github.com/mks-zakaria/sehaty-api/pull/74),
+  [`6691a40`](https://github.com/mks-zakaria/sehaty-api/commit/6691a4092575b823b4e438af44e57a7e02fd2d3d))
+
+- **api**: Serve availability responses from AvailabilityRow
+  ([#84](https://github.com/mks-zakaria/sehaty-api/pull/84),
+  [`72ce228`](https://github.com/mks-zakaria/sehaty-api/commit/72ce228e658c810695a0b0244d52d7bc5ec50835))
+
+- **api**: Serve billing & reporting responses from core projections
+  ([#70](https://github.com/mks-zakaria/sehaty-api/pull/70),
+  [`7a60b31`](https://github.com/mks-zakaria/sehaty-api/commit/7a60b31ef964e3012005ef4ceb26d93d48e77fa2))
+
+- **api**: Serve billing responses from core projections
+  ([#82](https://github.com/mks-zakaria/sehaty-api/pull/82),
+  [`486428d`](https://github.com/mks-zakaria/sehaty-api/commit/486428dc63aa4bf5cfe83d947cdb00e4163c781c))
+
+- **api**: Serve clinical responses from core projections
+  ([#66](https://github.com/mks-zakaria/sehaty-api/pull/66),
+  [`3de8cde`](https://github.com/mks-zakaria/sehaty-api/commit/3de8cdeca3c172d42e846d91f7f82eb1634706ac))
+
+- **api**: Serve config & dashboard responses from core projections
+  ([#76](https://github.com/mks-zakaria/sehaty-api/pull/76),
+  [`1ad092f`](https://github.com/mks-zakaria/sehaty-api/commit/1ad092f843ed2e141c8b950cf6266a491871897a))
+
+- **api**: Serve doctor/directory/admin responses from core projections
+  ([#78](https://github.com/mks-zakaria/sehaty-api/pull/78),
+  [`cddff95`](https://github.com/mks-zakaria/sehaty-api/commit/cddff956e0ed2b95cf0e37bf5c4c76329c3d3ffd))
+
+- **api**: Serve messaging responses from core projections
+  ([#68](https://github.com/mks-zakaria/sehaty-api/pull/68),
+  [`a18fc8f`](https://github.com/mks-zakaria/sehaty-api/commit/a18fc8fb62ff40d7d788c56e9f02d45bfe89998a))
+
+- **api**: Serve notification responses from NotificationRow
+  ([#86](https://github.com/mks-zakaria/sehaty-api/pull/86),
+  [`7e177a0`](https://github.com/mks-zakaria/sehaty-api/commit/7e177a03443c0e3f36d80c6cfc09971417a46ba3))
+
+- **api**: Serve patient & assistant responses from core projections
+  ([#72](https://github.com/mks-zakaria/sehaty-api/pull/72),
+  [`309f242`](https://github.com/mks-zakaria/sehaty-api/commit/309f242577560e75d3aedf9d885aa4c2a177e2db))
+
+- **api**: Serve referral responses from ReferralRow
+  ([#88](https://github.com/mks-zakaria/sehaty-api/pull/88),
+  [`93bdad4`](https://github.com/mks-zakaria/sehaty-api/commit/93bdad4749d65edc6784318cbe55960887b75dfe))
+
+- **api**: Serve review responses from ReviewRow projection
+  ([#80](https://github.com/mks-zakaria/sehaty-api/pull/80),
+  [`16dbc15`](https://github.com/mks-zakaria/sehaty-api/commit/16dbc15fbefcc0bdadbe94ac34f4706097116038))
+
+
 ## v1.29.0 (2026-07-16)
 
 ### Features
