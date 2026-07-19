@@ -13,16 +13,19 @@ taxonomy) are mapped to HTTP by the global exception handler in ``main``.
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends
-from sehaty.core.controllers.billing import BillingController, SubscriptionSummary
+from sehaty.core.controllers.billing import (
+    BillingController,
+    PaymentRow,
+    PlanRow,
+    SubscriptionRow,
+    SubscriptionSummary,
+)
 from sehaty.db import User, UserRole
 
 from deps import get_current_user, require_roles
 from schemas.billing import (
     CashPaymentIn,
-    PaymentOut,
-    PlanOut,
     SubscribeIn,
-    SubscriptionOut,
 )
 
 router = APIRouter(prefix="/api/v1/billing", tags=["billing"])
@@ -31,13 +34,12 @@ _require_doctor = require_roles(UserRole.DOCTOR)
 _require_admin = require_roles(UserRole.ADMIN)
 
 
-@router.get("/plans", response_model=list[PlanOut])
+@router.get("/plans", response_model=list[PlanRow])
 def list_plans(
     _user: User = Depends(get_current_user),
-) -> list[PlanOut]:
+) -> list[PlanRow]:
     """List the active plan catalogue (any authenticated user)."""
-    plans = BillingController.list_plans()
-    return [PlanOut.model_validate(p) for p in plans]
+    return BillingController.list_plans()
 
 
 @router.get("/me", response_model=SubscriptionSummary)
@@ -48,14 +50,13 @@ def my_subscription(
     return BillingController.subscription_status(doctor.id)
 
 
-@router.post("/me/subscribe", response_model=SubscriptionOut)
+@router.post("/me/subscribe", response_model=SubscriptionRow)
 def subscribe(
     body: SubscribeIn,
     doctor: User = Depends(_require_doctor),
-) -> SubscriptionOut:
+) -> SubscriptionRow:
     """Start or switch the calling doctor's subscription (404 on unknown plan code)."""
-    subscription = BillingController.subscribe(doctor.id, body.plan_code)
-    return SubscriptionOut.model_validate(subscription)
+    return BillingController.subscribe(doctor.id, body.plan_code)
 
 
 @router.post("/admin/seed-plans")
@@ -67,11 +68,11 @@ def seed_plans(
     return {"created": len(created)}
 
 
-@router.post("/admin/payments", response_model=PaymentOut)
+@router.post("/admin/payments", response_model=PaymentRow)
 def record_cash_payment(
     body: CashPaymentIn,
     admin: User = Depends(_require_admin),
-) -> PaymentOut:
+) -> PaymentRow:
     """Record cash against an invoice (ADMIN only); idempotent per receipt number.
 
     ``paid_at`` defaults to now (server-side) when omitted. 404 on a missing
@@ -85,7 +86,7 @@ def record_cash_payment(
         receipt_no=body.receipt_no,
         paid_at=paid_at,
     )
-    return PaymentOut.model_validate(payment)
+    return payment
 
 
 @router.post("/admin/dunning")
