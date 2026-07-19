@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.38.0 (2026-07-19)
+
+### Features
+
+- **api**: Availability daily cap + edit endpoints
+  ([#112](https://github.com/mks-zakaria/sehaty-api/pull/112),
+  [`1650219`](https://github.com/mks-zakaria/sehaty-api/commit/1650219893f61b9f82e8308f488e2be508ab9c33))
+
+
 ## v1.37.0 (2026-07-19)
 
 ### Features
