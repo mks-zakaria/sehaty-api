@@ -4,7 +4,7 @@ No business logic, no DB access. Handlers parse one of these, call a single
 `AuthController` method, and serialise the result back out.
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class DoctorRegisterIn(BaseModel):
@@ -56,14 +56,3 @@ class TokenOut(BaseModel):
     access: str
     refresh: str
     role: str
-
-
-class MeOut(BaseModel):
-    """The authenticated user's public identity."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    role: str
-    email: str | None = None
-    phone: str | None = None

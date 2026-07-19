@@ -7,7 +7,7 @@ taxonomy) are mapped to HTTP by the global exception handler in `main`.
 import os
 
 from fastapi import APIRouter, Depends, Request, Response, status
-from sehaty.core.controllers.auth import AuthController
+from sehaty.core.controllers.auth import AuthController, MeView
 from sehaty.core.controllers.referral import ReferralController
 from sehaty.db import User
 
@@ -15,7 +15,6 @@ from deps import get_current_user
 from schemas.auth import (
     DoctorRegisterIn,
     LoginIn,
-    MeOut,
     OtpRequestIn,
     OtpVerifyIn,
     RefreshIn,
@@ -25,8 +24,8 @@ from schemas.auth import (
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-@router.post("/doctor/register", response_model=MeOut, status_code=status.HTTP_201_CREATED)
-def register_doctor(body: DoctorRegisterIn) -> MeOut:
+@router.post("/doctor/register", response_model=MeView, status_code=status.HTTP_201_CREATED)
+def register_doctor(body: DoctorRegisterIn) -> MeView:
     """Register a doctor (created unverified). Parse -> controller -> serialize.
 
     An optional ``referral_code`` links the new doctor to a referrer as a
@@ -43,7 +42,7 @@ def register_doctor(body: DoctorRegisterIn) -> MeOut:
     )
     if body.referral_code:
         ReferralController.record_referral(body.referral_code, user.id)
-    return MeOut.model_validate(user)
+    return user
 
 
 @router.post("/login", response_model=TokenOut)
@@ -92,7 +91,11 @@ def logout(body: RefreshIn) -> Response:
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/me", response_model=MeOut)
-def me(user: User = Depends(get_current_user)) -> MeOut:
-    """Return the authenticated user's identity (bearer token required)."""
-    return MeOut.model_validate(user)
+@router.get("/me", response_model=MeView)
+def me(user: User = Depends(get_current_user)) -> MeView:
+    """Return the authenticated user's identity (bearer token required).
+
+    The ``User`` ORM arrives from the auth dependency, so the ``MeView`` shape
+    (owned by core) is built here at the transport boundary.
+    """
+    return MeView.model_validate(user)
