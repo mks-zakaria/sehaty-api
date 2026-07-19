@@ -96,3 +96,39 @@ def test_logout_revokes_refresh(client: TestClient) -> None:
     # A revoked refresh token can no longer be rotated.
     resp = client.post("/api/v1/auth/refresh", json={"refresh": tokens["refresh"]})
     assert resp.status_code == 403, resp.text
+
+
+def test_patient_register_and_login(client: TestClient) -> None:
+    reg = client.post(
+        "/api/v1/auth/patient/register",
+        json={"phone": "+212650001234", "password": "secret123"},
+    )
+    assert reg.status_code == 201, reg.text
+    body = reg.json()
+    assert body["role"] == "PATIENT"
+    assert body["access"] and body["refresh"]
+
+    # /me works with the returned token.
+    me = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {body['access']}"})
+    assert me.status_code == 200 and me.json()["role"] == "PATIENT"
+
+    # Log in again with phone + password.
+    login = client.post(
+        "/api/v1/auth/patient/login",
+        json={"phone": "+212650001234", "password": "secret123"},
+    )
+    assert login.status_code == 200, login.text
+
+    # Wrong password -> 403.
+    bad = client.post(
+        "/api/v1/auth/patient/login",
+        json={"phone": "+212650001234", "password": "wrong"},
+    )
+    assert bad.status_code == 403
+
+    # Duplicate registration -> 409.
+    dup = client.post(
+        "/api/v1/auth/patient/register",
+        json={"phone": "+212650001234", "password": "secret123"},
+    )
+    assert dup.status_code == 409, dup.text
