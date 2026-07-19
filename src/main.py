@@ -27,6 +27,7 @@ from routers.dashboard import router as dashboard_router
 from routers.diagnoses import router as diagnoses_router
 from routers.doctor_appointments import router as doctor_appointments_router
 from routers.doctors import router as doctors_router
+from routers.export import router as export_router
 from routers.feedback import router as feedback_router
 from routers.messages import router as messages_router
 from routers.notifications import router as notifications_router
@@ -101,3 +102,4 @@ app.include_router(messages_router)
 app.include_router(clinic_messages_router)
 app.include_router(cabinets_router)
 app.include_router(consultations_router)
+app.include_router(export_router)
