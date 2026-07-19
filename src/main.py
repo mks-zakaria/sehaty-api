@@ -19,8 +19,10 @@ from routers.assistants import router as assistants_router
 from routers.auth import router as auth_router
 from routers.availability import router as availability_router
 from routers.billing import router as billing_router
+from routers.cabinets import router as cabinets_router
 from routers.clinic_messages import router as clinic_messages_router
 from routers.config import router as config_router
+from routers.consultations import router as consultations_router
 from routers.dashboard import router as dashboard_router
 from routers.diagnoses import router as diagnoses_router
 from routers.doctor_appointments import router as doctor_appointments_router
@@ -97,3 +99,5 @@ app.include_router(assistants_router)
 app.include_router(doctor_appointments_router)
 app.include_router(messages_router)
 app.include_router(clinic_messages_router)
+app.include_router(cabinets_router)
+app.include_router(consultations_router)
