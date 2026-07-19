@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.36.0 (2026-07-19)
+
+### Features
+
+- **api**: Doctor medication-search endpoint
+  ([#108](https://github.com/mks-zakaria/sehaty-api/pull/108),
+  [`cc55bd4`](https://github.com/mks-zakaria/sehaty-api/commit/cc55bd4c849dc5f97ae8c2add4e004793a4ba033))
+
+
 ## v1.35.0 (2026-07-19)
 
 ### Features
