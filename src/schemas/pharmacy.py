@@ -20,3 +20,12 @@ class DispenseIn(BaseModel):
     code: str
     lines: list[DispenseLineIn]
     notes: str | None = None
+
+
+class StockIn(BaseModel):
+    """Create or update a pharmacy's stock for one catalogue medication."""
+
+    medication_id: int
+    quantity: int
+    price: float | None = None
+    low_threshold: int = 10
