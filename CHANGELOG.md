@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v1.39.0 (2026-07-19)
+
+### Features
+
+- **api**: Cabinet waiting-count + alert-threshold endpoints
+  ([#114](https://github.com/mks-zakaria/sehaty-api/pull/114),
+  [`0755e1d`](https://github.com/mks-zakaria/sehaty-api/commit/0755e1dfff69335b8bff6cf2840e698397490c2f))
+
+### Testing
+
+- **api**: Expect name_ary in the specialties endpoint keys
+  ([#116](https://github.com/mks-zakaria/sehaty-api/pull/116),
+  [`1f0553c`](https://github.com/mks-zakaria/sehaty-api/commit/1f0553c59a4c77bb6afcd9e59a2fb419696829a8))
+
+
 ## v1.38.0 (2026-07-19)
 
 ### Features
