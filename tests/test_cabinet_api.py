@@ -113,3 +113,18 @@ def test_cabinet_consultation_flow(client: TestClient, db: sessionmaker[Session]
 
     # Queue is empty once the patient has been seen.
     assert client.get("/api/v1/consultations/queue", headers=h).json() == []
+
+
+def test_active_session_endpoint(client: TestClient, db: sessionmaker[Session]) -> None:
+    _doctor_id, token = _register_doctor(client)
+    h = _auth(token)
+    cab = client.post("/api/v1/cabinets", json={"name": "C"}, headers=h).json()
+
+    # Nobody online yet -> null.
+    assert client.get("/api/v1/consultations/active-session", headers=h).json() is None
+
+    sess = client.post(f"/api/v1/cabinets/{cab['id']}/sessions", json={}, headers=h).json()
+    got = client.get("/api/v1/consultations/active-session", headers=h).json()
+    assert got is not None
+    assert got["id"] == sess["id"]
+    assert got["is_open"] is True
