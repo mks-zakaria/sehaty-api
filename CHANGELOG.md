@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.40.0 (2026-07-19)
+
+### Features
+
+- **api**: Desk-accessible cabinet list for the waiting-room count
+  ([#118](https://github.com/mks-zakaria/sehaty-api/pull/118),
+  [`ba84727`](https://github.com/mks-zakaria/sehaty-api/commit/ba847278ee2ea1945f2b5276ce99f1d8b8bfae50))
+
+
 ## v1.39.0 (2026-07-19)
 
 ### Features
