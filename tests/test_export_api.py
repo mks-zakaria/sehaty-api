@@ -62,7 +62,7 @@ def test_export_xlsx_download(client: TestClient, db: sessionmaker[Session]) -> 
     workbook = zf.read("xl/workbook.xml").decode()
     for title in (
         "Patients", "Appointments", "Consultations", "Diagnoses",
-        "Prescriptions", "Reviews", "Billing",
+        "Prescriptions", "Prescription Items", "Reviews", "Billing",
     ):
         assert f'name="{title}"' in workbook
     assert "Zineb El Amrani" in zf.read("xl/worksheets/sheet1.xml").decode()
