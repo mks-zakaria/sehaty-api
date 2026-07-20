@@ -6,8 +6,12 @@ Minimal stack for the first users. Everything runs in one `docker compose`:
 |-----------|----------------------------------------|
 | `db`      | Postgres 16 + PostGIS (data on a volume) |
 | `migrate` | one-shot `alembic upgrade head`, then exits |
-| `api`     | FastAPI (uvicorn), internal port 8000  |
-| `caddy`   | HTTPS reverse proxy, auto Let's Encrypt |
+| `api`     | FastAPI (uvicorn), published on `127.0.0.1:8088` |
+
+TLS + public routing is handled by the host's **nginx** (see "Behind an existing
+nginx" below). On a shared box nginx already owns :80/:443, so this stack ships
+no Caddy; the API is reachable only via nginx. (`Caddyfile` is kept for the
+dedicated-droplet variant, where you'd re-add a `caddy` service on 80/443.)
 
 The **front-end and landing page deploy to Vercel** (free) and call this API over HTTPS. No SMS/email/Redis/queue needed — doctors & pharmacies use email+password, patients use phone+password.
 
@@ -76,6 +80,22 @@ Boot order is automatic: `db` → `migrate` (runs to completion) → `api` → `
 curl https://<SEHATY_API_HOST>/api/health          # -> {"status":"ok"}
 # Register a doctor / pharmacy, or a patient (phone+password), then log in.
 ```
+
+## Behind an existing nginx (shared host)
+
+The stack publishes the API on `127.0.0.1:8088`. Point the host's nginx at it
+with the included vhost (additive — it doesn't touch other server blocks):
+
+```bash
+HOST=$(grep '^SEHATY_API_HOST=' /opt/sehaty/sehaty-api/deploy/.env | cut -d= -f2)
+sed "s/__SEHATY_API_HOST__/$HOST/" /opt/sehaty/sehaty-api/deploy/nginx-sehaty.conf \
+  | sudo tee /etc/nginx/sites-available/sehaty.conf
+sudo ln -sf /etc/nginx/sites-available/sehaty.conf /etc/nginx/sites-enabled/sehaty.conf
+sudo nginx -t && sudo systemctl reload nginx     # validate BEFORE reloading
+sudo certbot --nginx -d "$HOST"                  # obtain + wire the TLS cert
+```
+
+Then `curl https://$HOST/api/health` → `{"status":"ok"}`.
 
 ## Front-end (Vercel)
 
