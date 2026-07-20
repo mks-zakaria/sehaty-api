@@ -2,6 +2,31 @@
 
 <!-- version list -->
 
+## v1.42.1 (2026-07-20)
+
+### Bug Fixes
+
+- **deploy**: Bump Dockerfile uv to 0.11.6
+  ([#130](https://github.com/mks-zakaria/sehaty-api/pull/130),
+  [`f572c33`](https://github.com/mks-zakaria/sehaty-api/commit/f572c33e2d46eb610b5ea15434459d7252ace668))
+
+### Chores
+
+- **deploy**: One-shot droplet bootstrap script
+  ([#128](https://github.com/mks-zakaria/sehaty-api/pull/128),
+  [`7dbdf83`](https://github.com/mks-zakaria/sehaty-api/commit/7dbdf831ba453b8eb9e49c430183e8ecec754071))
+
+- **deploy**: Pilot docker-compose stack (db + migrate + api + caddy)
+  ([#124](https://github.com/mks-zakaria/sehaty-api/pull/124),
+  [`dd6afa4`](https://github.com/mks-zakaria/sehaty-api/commit/dd6afa4141f701d9ab9687fa0e9e3e59a9d82d70))
+
+### Continuous Integration
+
+- Auto-deploy to the droplet on push to main
+  ([#126](https://github.com/mks-zakaria/sehaty-api/pull/126),
+  [`f404166`](https://github.com/mks-zakaria/sehaty-api/commit/f404166f8389b5b264c1919539f77113716a48c0))
+
+
 ## v1.42.0 (2026-07-19)
 
 ### Features
