@@ -17,7 +17,9 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends libpq5 \
  && rm -rf /var/lib/apt/lists/*
 
-COPY --from=ghcr.io/astral-sh/uv:0.5.7 /uv /uvx /usr/local/bin/
+# uv must be recent enough to parse the lockfile format (uv.lock revision 3);
+# pin to the version that writes it. Bump in lockstep with the local uv.
+COPY --from=ghcr.io/astral-sh/uv:0.11.6 /uv /uvx /usr/local/bin/
 
 # Deps first (cache survives source edits).
 #
