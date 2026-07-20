@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.43.0 (2026-07-20)
+
+### Features
+
+- **deploy**: Run behind existing nginx (shared host)
+  ([#132](https://github.com/mks-zakaria/sehaty-api/pull/132),
+  [`76f6e78`](https://github.com/mks-zakaria/sehaty-api/commit/76f6e78aa2ab63e8211e68313b108d145bb02a4d))
+
+
 ## v1.42.1 (2026-07-20)
 
 ### Bug Fixes
