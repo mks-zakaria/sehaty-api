@@ -22,6 +22,20 @@ sehaty/
 └── sehaty-db/
 ```
 
+## Quick start (scripted)
+
+`bootstrap.sh` does the whole first provision, idempotently — install Docker +
+firewall, set up GitHub read access, clone the three repos to `/opt/sehaty`,
+create `.env`, and launch. It stops for each manual step (add the SSH key, fill
+in `.env`); just re-run it after each.
+
+```bash
+scp bootstrap.sh root@<droplet-ip>:/root/bootstrap.sh
+ssh root@<droplet-ip> 'bash /root/bootstrap.sh'   # re-run when it asks
+```
+
+The manual equivalent is below.
+
 ## One-time droplet setup
 
 ```bash
