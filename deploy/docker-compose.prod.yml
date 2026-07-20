@@ -55,26 +55,11 @@ services:
       SEHATY_JWT_SECRET: ${SEHATY_JWT_SECRET:?set SEHATY_JWT_SECRET in .env}
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
       SEHATY_ENV: ${SEHATY_ENV:-prod}
-    expose:
-      - "8000"
-
-  caddy:
-    image: caddy:2
-    restart: unless-stopped
-    depends_on:
-      - api
-    environment:
-      SEHATY_API_HOST: ${SEHATY_API_HOST:?set SEHATY_API_HOST in .env}
-      ACME_EMAIL: ${ACME_EMAIL:-}
+    # Published to localhost only — the host's existing nginx reverse-proxies
+    # ${SEHATY_API_HOST} to it and terminates TLS. Not reachable from outside the
+    # droplet directly. (No Caddy here: on a shared box nginx already owns 80/443.)
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+      - "127.0.0.1:8088:8000"
 
 volumes:
   pgdata:
-  caddy_data:
-  caddy_config:
