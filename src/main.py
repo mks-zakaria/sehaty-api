@@ -31,6 +31,7 @@ from routers.export import router as export_router
 from routers.feedback import router as feedback_router
 from routers.messages import router as messages_router
 from routers.notifications import router as notifications_router
+from routers.patient_ledger import router as patient_ledger_router
 from routers.patients import router as patients_router
 from routers.pharmacy import router as pharmacy_router
 from routers.practice import router as practice_router
@@ -87,6 +88,7 @@ app.include_router(admin_router)
 app.include_router(billing_router)
 app.include_router(referrals_router)
 app.include_router(patients_router)
+app.include_router(patient_ledger_router)
 app.include_router(dashboard_router)
 app.include_router(analytics_router)
 app.include_router(notifications_router)
