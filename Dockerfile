@@ -36,6 +36,9 @@ RUN uv sync --frozen --no-install-project --no-dev
 
 # Copy source last.
 COPY sehaty-api/src/ /code/src/
+# Management scripts (e.g. the demo seed) — run with `python scripts/<name>.py`
+# inside the container so they share the app deps + DATABASE_URL.
+COPY sehaty-api/scripts/ /code/scripts/
 COPY sehaty-api/docker-entrypoint.sh /code/docker-entrypoint.sh
 RUN chmod +x /code/docker-entrypoint.sh
 
