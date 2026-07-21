@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.44.0 (2026-07-21)
+
+### Features
+
+- **api**: Patient debt-ledger endpoints
+  ([`d0729f5`](https://github.com/mks-zakaria/sehaty-api/commit/d0729f5377049bf5cbc5c75fcdac7fb92399fd7d))
+
+
 ## v1.43.0 (2026-07-20)
 
 ### Features
