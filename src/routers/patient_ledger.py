@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, status
 from sehaty.core.controllers.patient_ledger import (
     ChargeRow,
     DebtorRow,
+    MyDebtsSummary,
     PatientLedgerController,
     PatientLedgerSummary,
 )
@@ -24,7 +25,17 @@ from schemas.patient_ledger import ChargeCreateIn, PaymentCreateIn
 
 router = APIRouter(prefix="/api/v1/doctor", tags=["patient-ledger"])
 
+# Patient-facing view of one's own charges (separate prefix + role).
+me_router = APIRouter(prefix="/api/v1/me", tags=["patient-ledger"])
+
 _require_doctor = require_roles(UserRole.DOCTOR)
+_require_patient = require_roles(UserRole.PATIENT)
+
+
+@me_router.get("/ledger", response_model=MyDebtsSummary)
+def my_ledger(patient: User = Depends(_require_patient)) -> MyDebtsSummary:
+    """The signed-in patient's charges across every doctor, with the total due."""
+    return PatientLedgerController.my_debts(patient.id)
 
 
 @router.get("/patients/{patient_id}/ledger", response_model=PatientLedgerSummary)

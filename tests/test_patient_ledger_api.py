@@ -179,3 +179,43 @@ def test_scoping_and_roles(client: TestClient, db: sessionmaker[Session]) -> Non
     )
     ledger = client.get(f"/api/v1/doctor/patients/{patient_id}/ledger", headers=_auth(token))
     assert ledger.json()["charges"] == []
+
+
+def test_my_ledger_patient_view(client: TestClient, db: sessionmaker[Session]) -> None:
+    """A patient sees their own charges via /api/v1/me/ledger; roles are enforced."""
+    from sehaty.db import ClinicPatient
+
+    doctor_id, token = _register_and_login_doctor(client, "9")
+    # Registration already created the doctor_profiles row (full_name "Dr Ledger 9");
+    # just link a patient account to this doctor's register.
+    with db() as s:
+        patient = User(email="me-pat@app.ma", role=UserRole.PATIENT, is_active=True,
+                       password_hash="unused")
+        s.add(patient)
+        s.commit()
+        patient_id = int(patient.id)
+        cp = ClinicPatient(doctor_id=doctor_id, user_id=patient_id, full_name="Me Patient")
+        s.add(cp)
+        s.commit()
+        clinic_patient_id = int(cp.id)
+
+    # Doctor bills the linked register row.
+    resp = client.post(
+        f"/api/v1/doctor/patients/{clinic_patient_id}/ledger/charges",
+        headers=_auth(token),
+        json={"label": "Braces", "total_amount": 8000, "initial_payment": 3000},
+    )
+    assert resp.status_code == 201, resp.text
+
+    patient_token = security.create_access_token(patient_id, UserRole.PATIENT)
+    me = client.get("/api/v1/me/ledger", headers=_auth(patient_token))
+    assert me.status_code == 200, me.text
+    body = me.json()
+    assert body["total_outstanding"] == 5000
+    assert len(body["charges"]) == 1
+    assert body["charges"][0]["label"] == "Braces"
+    assert body["charges"][0]["doctor_name"] == "Dr Ledger 9"
+    assert body["charges"][0]["balance"] == 5000
+
+    # A doctor token is rejected on the patient endpoint.
+    assert client.get("/api/v1/me/ledger", headers=_auth(token)).status_code == 403
