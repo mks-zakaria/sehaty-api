@@ -17,8 +17,6 @@ _require_doctor = require_roles(UserRole.DOCTOR)
 
 
 @router.get("", response_model=DoctorAnalytics)
-def doctor_analytics(
-    months: int = 6, doctor: User = Depends(_require_doctor)
-) -> DoctorAnalytics:
+def doctor_analytics(months: int = 6, doctor: User = Depends(_require_doctor)) -> DoctorAnalytics:
     """The calling doctor's practice-insights trend over the last ``months``."""
     return DoctorAnalyticsController.doctor_analytics(doctor.id, months=months)

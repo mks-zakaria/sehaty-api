@@ -20,8 +20,11 @@ from routers.auth import router as auth_router
 from routers.availability import router as availability_router
 from routers.billing import router as billing_router
 from routers.cabinets import router as cabinets_router
+from routers.cities import router as cities_router
+from routers.claims import router as claims_router
 from routers.clinic_messages import router as clinic_messages_router
 from routers.config import router as config_router
+from routers.confirmations import router as confirmations_router
 from routers.consultations import router as consultations_router
 from routers.dashboard import router as dashboard_router
 from routers.diagnoses import router as diagnoses_router
@@ -29,6 +32,7 @@ from routers.doctor_appointments import router as doctor_appointments_router
 from routers.doctors import router as doctors_router
 from routers.export import router as export_router
 from routers.feedback import router as feedback_router
+from routers.landing_events import router as landing_events_router
 from routers.messages import router as messages_router
 from routers.notifications import router as notifications_router
 from routers.patient_ledger import me_router as patient_ledger_me_router
@@ -84,6 +88,10 @@ app.include_router(doctors_router)
 app.include_router(availability_router)
 app.include_router(appointments_router)
 app.include_router(specialties_router)
+app.include_router(cities_router)
+app.include_router(claims_router)
+app.include_router(confirmations_router)
+app.include_router(landing_events_router)
 app.include_router(reviews_router)
 app.include_router(admin_router)
 app.include_router(billing_router)

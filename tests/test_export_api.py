@@ -61,8 +61,14 @@ def test_export_xlsx_download(client: TestClient, db: sessionmaker[Session]) -> 
     # Five sheets, and the seeded patient shows up in the Patients sheet.
     workbook = zf.read("xl/workbook.xml").decode()
     for title in (
-        "Patients", "Appointments", "Consultations", "Diagnoses",
-        "Prescriptions", "Prescription Items", "Reviews", "Billing",
+        "Patients",
+        "Appointments",
+        "Consultations",
+        "Diagnoses",
+        "Prescriptions",
+        "Prescription Items",
+        "Reviews",
+        "Billing",
     ):
         assert f'name="{title}"' in workbook
     assert "Zineb El Amrani" in zf.read("xl/worksheets/sheet1.xml").decode()

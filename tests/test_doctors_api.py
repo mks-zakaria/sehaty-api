@@ -30,6 +30,12 @@ _DOCTOR = {
 _LAT = 33.589886
 _LNG = -7.603869
 _SPECIALTIES = ["cardiology", "dermatology"]
+# A typical Casablanca week: 0=Monday, split at midday. Already sorted, so the
+# controller's normalization returns it unchanged and the round-trip is exact.
+_OPENING_HOURS = [
+    {"weekday": 0, "ranges": [["09:00", "12:30"], ["15:00", "19:00"]]},
+    {"weekday": 1, "ranges": [["09:00", "12:30"]]},
+]
 
 
 def _auth(token: str) -> dict[str, str]:
@@ -87,6 +93,12 @@ def test_doctor_profile_upsert_and_public_page(
             "lat": _LAT,
             "lng": _LNG,
             "languages": ["ar", "fr"],
+            "phone_fixe": "+212522445566",
+            "whatsapp": "+212661445566",
+            "opening_hours": _OPENING_HOURS,
+            # Mixed case + a duplicate: the controller lowercases and dedupes.
+            "insurances": ["CNSS", "cnops", "CNSS"],
+            "tiers_payant": True,
             "specialty_slugs": _SPECIALTIES,
         },
     )
@@ -121,6 +133,14 @@ def test_doctor_profile_upsert_and_public_page(
     assert body["verification_status"].endswith("VERIFIED")
     returned_slugs = {s["slug"] for s in body["specialties"]}
     assert returned_slugs == set(_SPECIALTIES)
+    # Public-landing fields: the page's CTAs, hours and insurance block.
+    assert body["phone_fixe"] == "+212522445566"
+    assert body["whatsapp"] == "+212661445566"
+    # A doctor who gave no mobile must serialize as null, not be omitted.
+    assert body["phone_mobile"] is None
+    assert body["opening_hours"] == _OPENING_HOURS
+    assert body["insurances"] == ["cnss", "cnops"]
+    assert body["tiers_payant"] is True
 
 
 def test_specialties_endpoint_lists_seeded_catalogue(

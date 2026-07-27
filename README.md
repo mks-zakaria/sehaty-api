@@ -63,6 +63,30 @@ uv run uvicorn main:app --app-dir src --reload
 `mks-zakaria/sehaty-db` alongside this repo before `uv sync`
 (see `.github/workflows/primary.yml`).
 
+## Operator scripts
+
+Run from `sehaty-api/`. The first two need `DATABASE_URL`; the print tools need
+the optional `print` extra (`reportlab` + `segno`), kept out of the runtime
+dependencies so the API image carries no PDF engine.
+
+| Script | What it does |
+| --- | --- |
+| `scripts/seed_demo.py` | Wipe and reseed a full Casablanca demo dataset. |
+| `scripts/import_doctors.py` | CSV → published, unclaimed doctor pages. Idempotent; never republishes a doctor who requested removal, never overwrites a claimed profile. `--dry-run` validates without writing. |
+| `scripts/print_assets.py` | A5 waiting-room plaques + A4 sheets of 10 pocket QR cards. Reads the database, or `--csv` for the same file the importer takes. |
+| `scripts/sales_sheet.py` | The Pack Présence one-pager (A4 recto/verso, French). |
+
+```bash
+uv run python scripts/import_doctors.py scripts/doctors.sample.csv --dry-run
+uv run --extra print python scripts/print_assets.py --csv scripts/doctors.sample.csv --out ./print
+uv run --extra print python scripts/sales_sheet.py --out ./print
+```
+
+QR codes are drawn as vector rectangles rather than embedded bitmaps, and every
+one carries `?src=qr` so scans are attributable in the landing analytics. The
+printed text is French only — reportlab cannot shape Arabic, and rendering it
+unshaped would print disconnected, reversed letters.
+
 ## Conventions
 
 Conventional Commits (enforced via pre-commit); versioning + tags via

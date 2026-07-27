@@ -76,7 +76,7 @@ def _cell(ref: str, value: object) -> str:
 
 def _worksheet(columns: Sequence[str], rows: Sequence[Sequence[object]]) -> str:
     lines = [
-        "<row r=\"1\">"
+        '<row r="1">'
         + "".join(_cell(f"{_col_letter(i + 1)}1", col) for i, col in enumerate(columns))
         + "</row>"
     ]

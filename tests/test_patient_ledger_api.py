@@ -41,9 +41,7 @@ def _register_and_login_doctor(client: TestClient, suffix: str) -> tuple[int, st
 
 
 def _add_walkin(client: TestClient, token: str, name: str) -> int:
-    resp = client.post(
-        "/api/v1/doctor/patients", headers=_auth(token), json={"full_name": name}
-    )
+    resp = client.post("/api/v1/doctor/patients", headers=_auth(token), json={"full_name": name})
     assert resp.status_code == 201, resp.text
     return int(resp.json()["id"])
 
@@ -92,9 +90,7 @@ def test_charge_instalments_and_balance(client: TestClient) -> None:
     )
     assert resp.status_code == 400, resp.text
 
-    ledger = client.get(
-        f"/api/v1/doctor/patients/{patient_id}/ledger", headers=_auth(token)
-    )
+    ledger = client.get(f"/api/v1/doctor/patients/{patient_id}/ledger", headers=_auth(token))
     assert ledger.status_code == 200, ledger.text
     body = ledger.json()
     assert body["total_charged"] == 8000
@@ -166,8 +162,7 @@ def test_scoping_and_roles(client: TestClient, db: sessionmaker[Session]) -> Non
     # A PATIENT token is rejected outright.
     patient_token = _patient_token(db)
     assert (
-        client.get("/api/v1/doctor/ledger/debtors", headers=_auth(patient_token)).status_code
-        == 403
+        client.get("/api/v1/doctor/ledger/debtors", headers=_auth(patient_token)).status_code == 403
     )
 
     # The owner can delete the charge (payments cascade).
@@ -189,8 +184,9 @@ def test_my_ledger_patient_view(client: TestClient, db: sessionmaker[Session]) -
     # Registration already created the doctor_profiles row (full_name "Dr Ledger 9");
     # just link a patient account to this doctor's register.
     with db() as s:
-        patient = User(email="me-pat@app.ma", role=UserRole.PATIENT, is_active=True,
-                       password_hash="unused")
+        patient = User(
+            email="me-pat@app.ma", role=UserRole.PATIENT, is_active=True, password_hash="unused"
+        )
         s.add(patient)
         s.commit()
         patient_id = int(patient.id)

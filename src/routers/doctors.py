@@ -74,6 +74,10 @@ def list_directory(
     q: str | None = Query(
         default=None, description="Optional doctor-name filter (type then name)."
     ),
+    city: str | None = Query(default=None, description="Optional city slug, e.g. 'casablanca'."),
+    district: str | None = Query(
+        default=None, description="Optional district slug, e.g. 'maarif'."
+    ),
     sort: str = Query(default="rating", description="One of 'rating', 'reviews', 'name'."),
     limit: int = Query(default=20, description="Maximum doctors per page."),
     offset: int = Query(default=0, description="Number of doctors to skip (pagination)."),
@@ -85,14 +89,30 @@ def list_directory(
     so the literal ``/directory`` segment binds here instead of being captured as
     a slug. An invalid ``sort``/``limit``/``offset`` surfaces as a 400 via the
     SehatyValidationError handler. Parse -> ONE controller call -> serialize.
+
+    ``city``/``district`` are the URL slugs the public landing routes use
+    (``/casablanca/maarif/dentiste``); an unknown one returns an empty page, so
+    the route can decide whether that is a 404.
     """
     return DoctorDirectoryController.list_directory(
         specialty=specialty,
         query=q,
+        city=city,
+        district=district,
         sort=sort,
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/slugs", response_model=list[str])
+def list_published_slugs() -> list[str]:
+    """Every public doctor slug, for the landing site's static generation.
+
+    Declared before ``GET /{slug}`` so the literal ``/slugs`` segment binds here
+    rather than being captured as a doctor slug.
+    """
+    return DoctorController.list_published_slugs()
 
 
 @router.put("/me/profile")

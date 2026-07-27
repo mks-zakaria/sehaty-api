@@ -137,6 +137,7 @@ def test_directory_lists_verified_doctors_no_auth(
         "full_name",
         "photo_url",
         "city",
+        "district",
         "consultation_fee",
         "avg_stars",
         "review_count",
