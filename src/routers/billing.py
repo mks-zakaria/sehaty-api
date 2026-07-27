@@ -12,13 +12,17 @@ taxonomy) are mapped to HTTP by the global exception handler in ``main``.
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sehaty.core.controllers.billing import (
     BillingController,
     PaymentRow,
     PlanRow,
     SubscriptionRow,
     SubscriptionSummary,
+)
+from sehaty.core.controllers.payment_tracking import (
+    PaymentBoard,
+    PaymentTrackingController,
 )
 from sehaty.db import User, UserRole
 
@@ -96,3 +100,17 @@ def run_dunning(
     """Flip subscriptions PAST_DUE for overdue OPEN invoices. Returns count flipped."""
     past_due = BillingController.run_dunning()
     return {"past_due": past_due}
+
+
+@router.get("/admin/payments/board", response_model=PaymentBoard)
+def payments_board(
+    limit: int = Query(default=200, description="Maximum rows (1-500)."),
+    _admin: User = Depends(_require_admin),
+) -> PaymentBoard:
+    """Who has paid, who has not, and who is about to lose their agenda.
+
+    Ordered by urgency rather than alphabetically: a suspended cabinet is
+    already losing bookings, one in grace is days away, one expiring soon is
+    this week's phone call. That ordering *is* the feature.
+    """
+    return PaymentTrackingController.board(limit=limit)

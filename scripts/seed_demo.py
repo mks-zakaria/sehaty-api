@@ -32,8 +32,6 @@ import os
 import random
 from datetime import UTC, datetime, time, timedelta
 
-from sqlalchemy import func, select
-
 from geoalchemy2.elements import WKTElement
 from sehaty.core.security import hash_password
 from sehaty.db import (
@@ -41,6 +39,7 @@ from sehaty.db import (
     AppointmentStatus,
     Availability,
     Cabinet,
+    ClaimStatus,
     ClinicPatient,
     Diagnosis,
     DoctorAssistant,
@@ -54,10 +53,8 @@ from sehaty.db import (
     PaymentMethod,
     PharmacyProduct,
     Plan,
-    Prescription,
-    PrescriptionItem,
-    PrescriptionStatus,
     ProductKind,
+    ProfileSource,
     ReputationScore,
     Review,
     ReviewDirection,
@@ -71,7 +68,7 @@ from sehaty.db import (
     UserRole,
 )
 from sehaty.db.base import SehatyBase
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
 # Deterministic run: same data every time (helps demos + screenshots).
@@ -101,9 +98,22 @@ def _jitter(km: float) -> tuple[float, float]:
 
 # Casablanca neighbourhoods used for addresses (paired with jittered coords).
 NEIGHBORHOODS = [
-    "Maârif", "Ain Diab", "Gauthier", "Anfa", "Bourgogne", "Sidi Maârouf",
-    "Hay Hassani", "Oulfa", "Ain Sebaâ", "Sidi Bernoussi", "Bouskoura",
-    "Derb Sultan", "Racine", "Palmier", "CIL", "Belvédère",
+    "Maârif",
+    "Ain Diab",
+    "Gauthier",
+    "Anfa",
+    "Bourgogne",
+    "Sidi Maârouf",
+    "Hay Hassani",
+    "Oulfa",
+    "Ain Sebaâ",
+    "Sidi Bernoussi",
+    "Bouskoura",
+    "Derb Sultan",
+    "Racine",
+    "Palmier",
+    "CIL",
+    "Belvédère",
 ]
 
 NOW = datetime.now(UTC)
@@ -112,17 +122,20 @@ NOW = datetime.now(UTC)
 def _reset(session: Session) -> None:
     """Truncate every domain table (keep alembic_version), reset identities."""
     tables = [
-        t.name for t in reversed(SehatyBase.metadata.sorted_tables)
-        if t.name != "alembic_version"
+        t.name for t in reversed(SehatyBase.metadata.sorted_tables) if t.name != "alembic_version"
     ]
-    session.execute(
-        text(f"TRUNCATE {', '.join(tables)} RESTART IDENTITY CASCADE")
-    )
+    session.execute(text(f"TRUNCATE {', '.join(tables)} RESTART IDENTITY CASCADE"))
 
 
 def _seed_specialties(session: Session) -> dict[str, Specialty]:
     rows = [
-        ("generalist", "General practitioner", "Médecin généraliste", "طبيب عام", "طبيب ديال العام"),
+        (
+            "generalist",
+            "General practitioner",
+            "Médecin généraliste",
+            "طبيب عام",
+            "طبيب ديال العام",
+        ),
         ("cardiology", "Cardiologist", "Cardiologue", "طبيب قلب", "طبيب ديال القلب"),
         ("dermatology", "Dermatologist", "Dermatologue", "طبيب جلدية", "طبيب ديال الجلد"),
         ("pediatrics", "Pediatrician", "Pédiatre", "طبيب أطفال", "طبيب ديال الدراري"),
@@ -155,30 +168,195 @@ def _seed_plans(session: Session) -> list[Plan]:
 
 # (email, display name, [specialty slugs], fee, verification, sub-status, languages)
 DOCTORS = [
-    ("dr.bennani@sehaty.ma", "Dr. Amina Bennani", ["dentistry", "orthodontics_alias"], 350, "VERIFIED", "ACTIVE", ["fr", "ar"]),
-    ("dr.tazi@sehaty.ma", "Dr. Youssef Tazi", ["cardiology"], 450, "VERIFIED", "ACTIVE", ["fr", "ar", "en"]),
-    ("dr.alaoui@sehaty.ma", "Dr. Salma Alaoui", ["dermatology"], 300, "VERIFIED", "ACTIVE", ["fr", "ar"]),
-    ("dr.chraibi@sehaty.ma", "Dr. Karim Chraibi", ["pediatrics"], 250, "VERIFIED", "TRIALING", ["fr", "ar"]),
-    ("dr.fassi@sehaty.ma", "Dr. Nadia Fassi", ["gynecology"], 400, "VERIFIED", "ACTIVE", ["fr", "ar"]),
-    ("dr.idrissi@sehaty.ma", "Dr. Hamza Idrissi", ["generalist"], 150, "VERIFIED", "ACTIVE", ["fr", "ar", "ary"]),
-    ("dr.berrada@sehaty.ma", "Dr. Leila Berrada", ["ophthalmology"], 350, "VERIFIED", "PAST_DUE", ["fr", "ar"]),
-    ("dr.saidi@sehaty.ma", "Dr. Omar Saidi", ["dentistry"], 320, "VERIFIED", "ACTIVE", ["fr", "ar"]),
-    ("dr.mansouri@sehaty.ma", "Dr. Fatima Mansouri", ["orthopedics"], 380, "VERIFIED", "ACTIVE", ["fr", "ar"]),
-    ("dr.kabbaj@sehaty.ma", "Dr. Rachid Kabbaj", ["otolaryngology"], 300, "VERIFIED", "ACTIVE", ["fr", "ar"]),
+    (
+        "dr.bennani@sehaty.ma",
+        "Dr. Amina Bennani",
+        ["dentistry", "orthodontics_alias"],
+        350,
+        "VERIFIED",
+        "ACTIVE",
+        ["fr", "ar"],
+    ),
+    (
+        "dr.tazi@sehaty.ma",
+        "Dr. Youssef Tazi",
+        ["cardiology"],
+        450,
+        "VERIFIED",
+        "ACTIVE",
+        ["fr", "ar", "en"],
+    ),
+    (
+        "dr.alaoui@sehaty.ma",
+        "Dr. Salma Alaoui",
+        ["dermatology"],
+        300,
+        "VERIFIED",
+        "ACTIVE",
+        ["fr", "ar"],
+    ),
+    (
+        "dr.chraibi@sehaty.ma",
+        "Dr. Karim Chraibi",
+        ["pediatrics"],
+        250,
+        "VERIFIED",
+        "TRIALING",
+        ["fr", "ar"],
+    ),
+    (
+        "dr.fassi@sehaty.ma",
+        "Dr. Nadia Fassi",
+        ["gynecology"],
+        400,
+        "VERIFIED",
+        "ACTIVE",
+        ["fr", "ar"],
+    ),
+    (
+        "dr.idrissi@sehaty.ma",
+        "Dr. Hamza Idrissi",
+        ["generalist"],
+        150,
+        "VERIFIED",
+        "ACTIVE",
+        ["fr", "ar", "ary"],
+    ),
+    (
+        "dr.berrada@sehaty.ma",
+        "Dr. Leila Berrada",
+        ["ophthalmology"],
+        350,
+        "VERIFIED",
+        "PAST_DUE",
+        ["fr", "ar"],
+    ),
+    (
+        "dr.saidi@sehaty.ma",
+        "Dr. Omar Saidi",
+        ["dentistry"],
+        320,
+        "VERIFIED",
+        "ACTIVE",
+        ["fr", "ar"],
+    ),
+    (
+        "dr.mansouri@sehaty.ma",
+        "Dr. Fatima Mansouri",
+        ["orthopedics"],
+        380,
+        "VERIFIED",
+        "ACTIVE",
+        ["fr", "ar"],
+    ),
+    (
+        "dr.kabbaj@sehaty.ma",
+        "Dr. Rachid Kabbaj",
+        ["otolaryngology"],
+        300,
+        "VERIFIED",
+        "ACTIVE",
+        ["fr", "ar"],
+    ),
     # Accreditation queue (admin): still PENDING verification.
-    ("dr.nouri@sehaty.ma", "Dr. Sanaa Nouri", ["psychiatry"], 500, "PENDING", "TRIALING", ["fr", "ar"]),
-    ("dr.hakimi@sehaty.ma", "Dr. Bilal Hakimi", ["generalist"], 180, "PENDING", "TRIALING", ["fr", "ar"]),
+    (
+        "dr.nouri@sehaty.ma",
+        "Dr. Sanaa Nouri",
+        ["psychiatry"],
+        500,
+        "PENDING",
+        "TRIALING",
+        ["fr", "ar"],
+    ),
+    (
+        "dr.hakimi@sehaty.ma",
+        "Dr. Bilal Hakimi",
+        ["generalist"],
+        180,
+        "PENDING",
+        "TRIALING",
+        ["fr", "ar"],
+    ),
     # Rejected accreditation.
-    ("dr.rejected@sehaty.ma", "Dr. Test Rejected", ["generalist"], 200, "REJECTED", "CANCELLED", ["fr"]),
+    (
+        "dr.rejected@sehaty.ma",
+        "Dr. Test Rejected",
+        ["generalist"],
+        200,
+        "REJECTED",
+        "CANCELLED",
+        ["fr"],
+    ),
 ]
 
+# Insurance pools, cycled across doctors so the landing page's insurance block
+# has something to show and the "no insurance on file" branch is covered too.
+INSURANCE_POOLS = [
+    ["cnss", "cnops", "amo"],
+    ["cnss", "amo", "saham", "axa"],
+    ["cnss"],
+    ["cnss", "cnops", "amo", "wafa", "rma"],
+    [],
+]
+
+# Typical cabinet weeks. 0=Monday; a closed day is simply absent.
+_FULL_WEEK = [
+    *({"weekday": wd, "ranges": [["09:00", "12:30"], ["15:00", "19:00"]]} for wd in range(5)),
+    {"weekday": 5, "ranges": [["09:00", "13:00"]]},
+]
+_MORNINGS_ONLY = [{"weekday": wd, "ranges": [["08:30", "13:00"]]} for wd in range(5)]
+_INCLUDES_SUNDAY = [
+    *({"weekday": wd, "ranges": [["10:00", "13:00"], ["16:00", "20:00"]]} for wd in range(1, 5)),
+    {"weekday": 6, "ranges": [["10:00", "14:00"]]},
+]
+HOUR_PATTERNS = [_FULL_WEEK, _MORNINGS_ONLY, _INCLUDES_SUNDAY, []]
+
+
+def _public_contact(i: int) -> dict:
+    """Cabinet contact + hours + insurance for demo doctor ``i``.
+
+    Deliberately uneven so every rendering branch of the public page is exercised
+    by at least one seeded doctor: a cabinet with no mobile has no WhatsApp
+    button, one with no hours hides the whole schedule section, and one with no
+    insurers hides that block. A uniform seed would make all of those look fine
+    while they are in fact untested.
+    """
+    fixe = f"+212522{100000 + i * 1111:06d}"
+    mobile = f"+212661{200000 + i * 1313:06d}"
+    variant = i % 5
+    if variant == 1:
+        # No dedicated WhatsApp line — the page falls back to the mobile.
+        contact = {"phone_fixe": fixe, "phone_mobile": mobile, "whatsapp": None}
+    elif variant == 2:
+        # Landline only: no WhatsApp button at all.
+        contact = {"phone_fixe": fixe, "phone_mobile": None, "whatsapp": None}
+    elif variant == 3:
+        # Mobile-only practice — "Appeler" has to use the mobile.
+        contact = {"phone_fixe": None, "phone_mobile": mobile, "whatsapp": mobile}
+    else:
+        contact = {"phone_fixe": fixe, "phone_mobile": mobile, "whatsapp": mobile}
+
+    return {
+        **contact,
+        "opening_hours": HOUR_PATTERNS[i % len(HOUR_PATTERNS)],
+        "insurances": INSURANCE_POOLS[i % len(INSURANCE_POOLS)],
+        "tiers_payant": i % 3 == 0,
+    }
+
+
 PATIENTS = [
-    ("Mehdi Alami", "male", 1990), ("Zineb Ouazzani", "female", 1985),
-    ("Khalid Sabri", "male", 1978), ("Hajar Lahlou", "female", 1995),
-    ("Anas Rami", "male", 2001), ("Imane Belkadi", "female", 1988),
-    ("Yassine Cherkaoui", "male", 1972), ("Sofia Amrani", "female", 1993),
-    ("Reda Benjelloun", "male", 1980), ("Nawal Sekkat", "female", 1998),
-    ("Amine Doukkali", "male", 1965), ("Loubna Hilali", "female", 1991),
+    ("Mehdi Alami", "male", 1990),
+    ("Zineb Ouazzani", "female", 1985),
+    ("Khalid Sabri", "male", 1978),
+    ("Hajar Lahlou", "female", 1995),
+    ("Anas Rami", "male", 2001),
+    ("Imane Belkadi", "female", 1988),
+    ("Yassine Cherkaoui", "male", 1972),
+    ("Sofia Amrani", "female", 1993),
+    ("Reda Benjelloun", "male", 1980),
+    ("Nawal Sekkat", "female", 1998),
+    ("Amine Doukkali", "male", 1965),
+    ("Loubna Hilali", "female", 1991),
 ]
 
 
@@ -202,22 +380,38 @@ def main() -> None:
             lat, lng = _jitter(13.0)
             hood = NEIGHBORHOODS[i % len(NEIGHBORHOODS)]
             u = User(
-                email=email, phone=f"+21252{i:07d}", password_hash=PW,
-                role=UserRole.DOCTOR, is_active=True, consented_at=NOW,
+                email=email,
+                phone=f"+21252{i:07d}",
+                password_hash=PW,
+                role=UserRole.DOCTOR,
+                is_active=True,
+                consented_at=NOW,
             )
             session.add(u)
             session.flush()
             doctors.append(u)
             slug = email.split("@")[0].replace(".", "-")
             prof = DoctorProfile(
-                user_id=u.id, full_name=name, slug=slug,
+                user_id=u.id,
+                full_name=name,
+                slug=slug,
                 license_no=f"CAS-{10000 + i}",
                 bio=f"{name} — cabinet à {hood}, Casablanca. Consultations sur rendez-vous.",
                 address=f"Rue {random.randint(1, 120)}, {hood}, Casablanca",
-                city="Casablanca", geopoint=_pt(lat, lng),
-                consultation_fee=float(fee), verification_status=vstatus,
-                referral_code=f"REF{u.id:04d}", is_staff=False, languages=langs,
+                city="Casablanca",
+                district=hood,
+                geopoint=_pt(lat, lng),
+                consultation_fee=float(fee),
+                verification_status=vstatus,
+                referral_code=f"REF{u.id:04d}",
+                is_staff=False,
+                languages=langs,
                 timezone="Africa/Casablanca",
+                # Every 4th seeded doctor is an unclaimed import, so the claim
+                # banner and the removal link are visible in the demo data.
+                claim_status=(ClaimStatus.UNCLAIMED if i % 4 == 3 else ClaimStatus.CLAIMED),
+                source=(ProfileSource.IMPORT if i % 4 == 3 else ProfileSource.MANUAL),
+                **_public_contact(i),
             )
             session.add(prof)
             doctor_profiles[u.id] = prof
@@ -227,19 +421,41 @@ def main() -> None:
                     session.add(DoctorSpecialty(doctor_id=u.id, specialty_id=specs[s].id))
             # Availability: Mon–Fri 09:00–13:00 & 15:00–18:00, 30-min slots.
             for wd in range(0, 5):
-                session.add(Availability(doctor_id=u.id, weekday=wd,
-                            start_time=time(9, 0), end_time=time(13, 0), slot_minutes=30))
-                session.add(Availability(doctor_id=u.id, weekday=wd,
-                            start_time=time(15, 0), end_time=time(18, 0), slot_minutes=30))
+                session.add(
+                    Availability(
+                        doctor_id=u.id,
+                        weekday=wd,
+                        start_time=time(9, 0),
+                        end_time=time(13, 0),
+                        slot_minutes=30,
+                    )
+                )
+                session.add(
+                    Availability(
+                        doctor_id=u.id,
+                        weekday=wd,
+                        start_time=time(15, 0),
+                        end_time=time(18, 0),
+                        slot_minutes=30,
+                    )
+                )
             # Cabinet.
-            session.add(Cabinet(owner_doctor_id=u.id, name=f"Cabinet {name.split()[-1]}",
-                        address=prof.address, is_active=True,
-                        waiting_room_count=random.randint(0, 4), waiting_alert_threshold=5))
+            session.add(
+                Cabinet(
+                    owner_doctor_id=u.id,
+                    name=f"Cabinet {name.split()[-1]}",
+                    address=prof.address,
+                    is_active=True,
+                    waiting_room_count=random.randint(0, 4),
+                    waiting_alert_threshold=5,
+                )
+            )
             # Subscription + invoices (verified doctors only).
             if vstatus == "VERIFIED":
                 plan = random.choice(plans)
                 sub = Subscription(
-                    doctor_id=u.id, plan_id=plan.id,
+                    doctor_id=u.id,
+                    plan_id=plan.id,
                     status=SubscriptionStatus(substatus),
                     current_period_start=NOW - timedelta(days=10),
                     current_period_end=NOW + timedelta(days=20),
@@ -247,28 +463,51 @@ def main() -> None:
                 session.add(sub)
                 session.flush()
                 # A paid invoice last month.
-                session.add(Invoice(doctor_id=u.id, subscription_id=sub.id,
-                            amount=plan.price_month, currency="MAD",
-                            status=InvoiceStatus.PAID, issued_at=NOW - timedelta(days=40),
-                            due_at=NOW - timedelta(days=25), paid_at=NOW - timedelta(days=30)))
+                session.add(
+                    Invoice(
+                        doctor_id=u.id,
+                        subscription_id=sub.id,
+                        amount=plan.price_month,
+                        currency="MAD",
+                        status=InvoiceStatus.PAID,
+                        issued_at=NOW - timedelta(days=40),
+                        due_at=NOW - timedelta(days=25),
+                        paid_at=NOW - timedelta(days=30),
+                    )
+                )
                 # Current invoice: OPEN (overdue for the PAST_DUE doctor).
                 overdue = substatus == "PAST_DUE"
-                session.add(Invoice(doctor_id=u.id, subscription_id=sub.id,
-                            amount=plan.price_month, currency="MAD",
-                            status=InvoiceStatus.OPEN,
-                            issued_at=NOW - timedelta(days=10),
-                            due_at=NOW - timedelta(days=3 if overdue else -12),
-                            paid_at=None))
+                session.add(
+                    Invoice(
+                        doctor_id=u.id,
+                        subscription_id=sub.id,
+                        amount=plan.price_month,
+                        currency="MAD",
+                        status=InvoiceStatus.OPEN,
+                        issued_at=NOW - timedelta(days=10),
+                        due_at=NOW - timedelta(days=3 if overdue else -12),
+                        paid_at=None,
+                    )
+                )
         session.flush()
 
-        verified_doctors = [d for d, spec in zip(doctors, DOCTORS) if spec[4] == "VERIFIED"]
+        verified_doctors = [
+            d for d, spec in zip(doctors, DOCTORS, strict=True) if spec[4] == "VERIFIED"
+        ]
 
         # -- Patients ------------------------------------------------------
         patients: list[User] = []
-        for i, (name, sex, birth) in enumerate(PATIENTS, start=1):
-            u = User(email=f"patient{i}@example.ma", phone=f"+21260000{i:04d}",
-                     password_hash=PW, role=UserRole.PATIENT, is_active=True,
-                     consented_at=NOW if i % 4 else None)
+        # Name/sex/birth are unpacked for readability but the User row only needs
+        # the index; the profile fields are set further down.
+        for i, (_name, _sex, _birth) in enumerate(PATIENTS, start=1):
+            u = User(
+                email=f"patient{i}@example.ma",
+                phone=f"+21260000{i:04d}",
+                password_hash=PW,
+                role=UserRole.PATIENT,
+                is_active=True,
+                consented_at=NOW if i % 4 else None,
+            )
             session.add(u)
             session.flush()
             patients.append(u)
@@ -278,32 +517,62 @@ def main() -> None:
         _seed_encounters(session, verified_doctors, doctor_profiles, patients, specs)
 
         # -- Debt ledger scenarios (the braces case) ----------------------
-        dentists = [d for d, spec in zip(doctors, DOCTORS)
-                    if "dentistry" in spec[2] and spec[4] == "VERIFIED"]
+        dentists = [
+            d
+            for d, spec in zip(doctors, DOCTORS, strict=True)
+            if "dentistry" in spec[2] and spec[4] == "VERIFIED"
+        ]
         _seed_ledger(session, dentists, patients)
 
         # -- Pharmacy ------------------------------------------------------
         _seed_pharmacy(session)
 
         # -- Assistant + Admin --------------------------------------------
-        assistant = User(email="assistant@sehaty.ma", phone="+212533000001",
-                         password_hash=PW, role=UserRole.ASSISTANT, is_active=True)
+        assistant = User(
+            email="assistant@sehaty.ma",
+            phone="+212533000001",
+            password_hash=PW,
+            role=UserRole.ASSISTANT,
+            is_active=True,
+        )
         session.add(assistant)
         session.flush()
-        session.add(DoctorAssistant(doctor_id=verified_doctors[0].id,
-                    assistant_id=assistant.id, is_active=True))
-        session.add(User(email="admin@sehaty.ma", phone="+212533000009",
-                    password_hash=PW, role=UserRole.ADMIN, is_active=True))
+        session.add(
+            DoctorAssistant(
+                doctor_id=verified_doctors[0].id, assistant_id=assistant.id, is_active=True
+            )
+        )
+        session.add(
+            User(
+                email="admin@sehaty.ma",
+                phone="+212533000009",
+                password_hash=PW,
+                role=UserRole.ADMIN,
+                is_active=True,
+            )
+        )
 
         # -- Notifications -------------------------------------------------
         for p in patients[:6]:
-            session.add(Notification(user_id=p.id, kind="APPOINTMENT_CONFIRMED",
-                        message="Votre rendez-vous a été confirmé.", entity="appointment",
-                        is_read=False))
+            session.add(
+                Notification(
+                    user_id=p.id,
+                    kind="APPOINTMENT_CONFIRMED",
+                    message="Votre rendez-vous a été confirmé.",
+                    entity="appointment",
+                    is_read=False,
+                )
+            )
         for d in verified_doctors[:5]:
-            session.add(Notification(user_id=d.id, kind="NEW_BOOKING",
-                        message="Nouvelle demande de rendez-vous.", entity="appointment",
-                        is_read=False))
+            session.add(
+                Notification(
+                    user_id=d.id,
+                    kind="NEW_BOOKING",
+                    message="Nouvelle demande de rendez-vous.",
+                    entity="appointment",
+                    is_read=False,
+                )
+            )
 
         session.commit()
         _print_summary(session)
@@ -318,22 +587,30 @@ def _seed_encounters(session, doctors, profiles, patients, specs) -> None:
         booked = random.sample(patients, 4)
         register: list[ClinicPatient] = []
         for p in booked:
-            cp = ClinicPatient(doctor_id=d.id, user_id=p.id,
-                               full_name=_name_of(p), phone=p.phone,
-                               email=p.email, sex=random.choice(["male", "female"]),
-                               birth_year=random.randint(1965, 2005),
-                               tags=random.choice([[], ["chronic"], ["vip"], ["new"]]),
-                               created_by=d.id)
+            cp = ClinicPatient(
+                doctor_id=d.id,
+                user_id=p.id,
+                full_name=_name_of(p),
+                phone=p.phone,
+                email=p.email,
+                sex=random.choice(["male", "female"]),
+                birth_year=random.randint(1965, 2005),
+                tags=random.choice([[], ["chronic"], ["vip"], ["new"]]),
+                created_by=d.id,
+            )
             session.add(cp)
             register.append(cp)
-        for w in range(2):
-            cp = ClinicPatient(doctor_id=d.id, user_id=None,
-                               full_name=random.choice(
-                                   ["Walk-in Rachid", "Walk-in Souad", "Walk-in Brahim"]),
-                               phone=f"+2126{random.randint(10000000, 99999999)}",
-                               sex=random.choice(["male", "female"]),
-                               birth_year=random.randint(1960, 2010),
-                               notes="Patient sans compte (walk-in).", created_by=d.id)
+        for _ in range(2):
+            cp = ClinicPatient(
+                doctor_id=d.id,
+                user_id=None,
+                full_name=random.choice(["Walk-in Rachid", "Walk-in Souad", "Walk-in Brahim"]),
+                phone=f"+2126{random.randint(10000000, 99999999)}",
+                sex=random.choice(["male", "female"]),
+                birth_year=random.randint(1960, 2010),
+                notes="Patient sans compte (walk-in).",
+                created_by=d.id,
+            )
             session.add(cp)
             register.append(cp)
         session.flush()
@@ -343,65 +620,116 @@ def _seed_encounters(session, doctors, profiles, patients, specs) -> None:
         for k in range(4):
             cp = register[k]
             start = base + timedelta(days=k * 3, hours=k % 3)
-            appt = Appointment(patient_id=cp.user_id or patients[0].id, doctor_id=d.id,
-                               clinic_patient_id=cp.id, start_at=start,
-                               end_at=start + timedelta(minutes=30),
-                               status=AppointmentStatus.COMPLETED,
-                               reason=random.choice(["Contrôle", "Douleur", "Suivi", "Consultation"]),
-                               notes="Consultation terminée.",
-                               consultation_started_at=start,
-                               consultation_ended_at=start + timedelta(minutes=25))
+            appt = Appointment(
+                patient_id=cp.user_id or patients[0].id,
+                doctor_id=d.id,
+                clinic_patient_id=cp.id,
+                start_at=start,
+                end_at=start + timedelta(minutes=30),
+                status=AppointmentStatus.COMPLETED,
+                reason=random.choice(["Contrôle", "Douleur", "Suivi", "Consultation"]),
+                notes="Consultation terminée.",
+                consultation_started_at=start,
+                consultation_ended_at=start + timedelta(minutes=25),
+            )
             session.add(appt)
             session.flush()
             if cp.user_id:
                 review_pool.append((d.id, cp.user_id, appt.id))
             # A diagnosis on some completed visits.
             if k % 2 == 0:
-                session.add(Diagnosis(doctor_id=d.id, clinic_patient_id=cp.id,
-                            appointment_id=appt.id,
-                            label=random.choice(["Hypertension", "Caries", "Rhinite", "Lombalgie"]),
-                            icd10=random.choice(["I10", "K02", "J30", "M54"]),
-                            diagnosed_at=start))
+                session.add(
+                    Diagnosis(
+                        doctor_id=d.id,
+                        clinic_patient_id=cp.id,
+                        appointment_id=appt.id,
+                        label=random.choice(["Hypertension", "Caries", "Rhinite", "Lombalgie"]),
+                        icd10=random.choice(["I10", "K02", "J30", "M54"]),
+                        diagnosed_at=start,
+                    )
+                )
 
         # Past NO_SHOW and CANCELLED.
         ns_start = NOW - timedelta(days=12, hours=2)
-        session.add(Appointment(patient_id=register[0].user_id or patients[0].id,
-                    doctor_id=d.id, clinic_patient_id=register[0].id, start_at=ns_start,
-                    end_at=ns_start + timedelta(minutes=30),
-                    status=AppointmentStatus.NO_SHOW, reason="Absent"))
+        session.add(
+            Appointment(
+                patient_id=register[0].user_id or patients[0].id,
+                doctor_id=d.id,
+                clinic_patient_id=register[0].id,
+                start_at=ns_start,
+                end_at=ns_start + timedelta(minutes=30),
+                status=AppointmentStatus.NO_SHOW,
+                reason="Absent",
+            )
+        )
         cx_start = NOW - timedelta(days=8, hours=4)
-        session.add(Appointment(patient_id=register[1].user_id or patients[0].id,
-                    doctor_id=d.id, clinic_patient_id=register[1].id, start_at=cx_start,
-                    end_at=cx_start + timedelta(minutes=30),
-                    status=AppointmentStatus.CANCELLED, reason="Annulé par le patient"))
+        session.add(
+            Appointment(
+                patient_id=register[1].user_id or patients[0].id,
+                doctor_id=d.id,
+                clinic_patient_id=register[1].id,
+                start_at=cx_start,
+                end_at=cx_start + timedelta(minutes=30),
+                status=AppointmentStatus.CANCELLED,
+                reason="Annulé par le patient",
+            )
+        )
 
         # Today: one CHECKED_IN (cabinet waiting room) + one IN_PROGRESS.
         t0 = NOW.replace(hour=9, minute=0, second=0, microsecond=0)
-        session.add(Appointment(patient_id=register[2].user_id or patients[0].id,
-                    doctor_id=d.id, clinic_patient_id=register[2].id, start_at=t0,
-                    end_at=t0 + timedelta(minutes=30),
-                    status=AppointmentStatus.CHECKED_IN, reason="Contrôle"))
+        session.add(
+            Appointment(
+                patient_id=register[2].user_id or patients[0].id,
+                doctor_id=d.id,
+                clinic_patient_id=register[2].id,
+                start_at=t0,
+                end_at=t0 + timedelta(minutes=30),
+                status=AppointmentStatus.CHECKED_IN,
+                reason="Contrôle",
+            )
+        )
         t1 = t0 + timedelta(minutes=30)
-        session.add(Appointment(patient_id=register[3].user_id or patients[0].id,
-                    doctor_id=d.id, clinic_patient_id=register[3].id, start_at=t1,
-                    end_at=t1 + timedelta(minutes=30),
-                    status=AppointmentStatus.IN_PROGRESS, reason="Consultation",
-                    consultation_started_at=NOW))
+        session.add(
+            Appointment(
+                patient_id=register[3].user_id or patients[0].id,
+                doctor_id=d.id,
+                clinic_patient_id=register[3].id,
+                start_at=t1,
+                end_at=t1 + timedelta(minutes=30),
+                status=AppointmentStatus.IN_PROGRESS,
+                reason="Consultation",
+                consultation_started_at=NOW,
+            )
+        )
 
         # Future CONFIRMED (2) + REQUESTED (2), spaced so no per-doctor overlap.
         fut = (NOW + timedelta(days=2)).replace(hour=10, minute=0, second=0, microsecond=0)
         for k in range(2):
             s = fut + timedelta(days=k, minutes=0)
-            session.add(Appointment(patient_id=booked[k].id, doctor_id=d.id,
-                        clinic_patient_id=register[k].id, start_at=s,
-                        end_at=s + timedelta(minutes=30),
-                        status=AppointmentStatus.CONFIRMED, reason="Rendez-vous confirmé"))
+            session.add(
+                Appointment(
+                    patient_id=booked[k].id,
+                    doctor_id=d.id,
+                    clinic_patient_id=register[k].id,
+                    start_at=s,
+                    end_at=s + timedelta(minutes=30),
+                    status=AppointmentStatus.CONFIRMED,
+                    reason="Rendez-vous confirmé",
+                )
+            )
         for k in range(2):
             s = fut + timedelta(days=4 + k, minutes=0)
-            session.add(Appointment(patient_id=booked[k + 1].id, doctor_id=d.id,
-                        clinic_patient_id=register[k + 1].id, start_at=s,
-                        end_at=s + timedelta(minutes=30),
-                        status=AppointmentStatus.REQUESTED, reason="Demande de rendez-vous"))
+            session.add(
+                Appointment(
+                    patient_id=booked[k + 1].id,
+                    doctor_id=d.id,
+                    clinic_patient_id=register[k + 1].id,
+                    start_at=s,
+                    end_at=s + timedelta(minutes=30),
+                    status=AppointmentStatus.REQUESTED,
+                    reason="Demande de rendez-vous",
+                )
+            )
     session.flush()
 
     # Reviews across statuses + reputation aggregation.
@@ -414,24 +742,42 @@ def _seed_encounters(session, doctors, profiles, patients, specs) -> None:
             status, stars = ReviewStatus.FLAGGED, random.randint(1, 2)
         else:
             status, stars = ReviewStatus.PUBLISHED, random.randint(3, 5)
-        comment = random.choice([
-            "Médecin à l'écoute, je recommande.", "Très professionnel.",
-            "Cabinet propre, peu d'attente.", "Bonne prise en charge.",
-            "Explications claires.", "",
-        ])
-        rev = Review(author_id=patient_id, target_id=doctor_id, appointment_id=appt_id,
-                     direction=ReviewDirection.PATIENT_ON_DOCTOR, stars=stars,
-                     comment=comment or None, status=status,
-                     reply="Merci pour votre retour." if (idx % 5 == 0 and status == ReviewStatus.PUBLISHED) else None,
-                     reply_at=NOW if idx % 5 == 0 else None)
+        comment = random.choice(
+            [
+                "Médecin à l'écoute, je recommande.",
+                "Très professionnel.",
+                "Cabinet propre, peu d'attente.",
+                "Bonne prise en charge.",
+                "Explications claires.",
+                "",
+            ]
+        )
+        rev = Review(
+            author_id=patient_id,
+            target_id=doctor_id,
+            appointment_id=appt_id,
+            direction=ReviewDirection.PATIENT_ON_DOCTOR,
+            stars=stars,
+            comment=comment or None,
+            status=status,
+            reply="Merci pour votre retour."
+            if (idx % 5 == 0 and status == ReviewStatus.PUBLISHED)
+            else None,
+            reply_at=NOW if idx % 5 == 0 else None,
+        )
         session.add(rev)
         if status == ReviewStatus.PUBLISHED:
             agg.setdefault(doctor_id, []).append(stars)
     session.flush()
     for doctor_id, stars_list in agg.items():
-        session.add(ReputationScore(user_id=doctor_id,
-                    avg_stars=round(sum(stars_list) / len(stars_list), 2),
-                    review_count=len(stars_list), updated_at=NOW))
+        session.add(
+            ReputationScore(
+                user_id=doctor_id,
+                avg_stars=round(sum(stars_list) / len(stars_list), 2),
+                review_count=len(stars_list),
+                updated_at=NOW,
+            )
+        )
     session.flush()
 
 
@@ -441,31 +787,55 @@ def _seed_ledger(session, dentists, patients) -> None:
         return
     d = dentists[0]
     # Fetch this dentist's register rows to attach charges to real patients.
-    register = session.execute(
-        select(ClinicPatient).where(ClinicPatient.doctor_id == d.id)
-    ).scalars().all()
+    register = (
+        session.execute(select(ClinicPatient).where(ClinicPatient.doctor_id == d.id))
+        .scalars()
+        .all()
+    )
     if len(register) < 4:
         return
 
     def charge(cp, label, total, payments, note=None):
-        c = PatientCharge(doctor_id=d.id, clinic_patient_id=cp.id, label=label,
-                          total_amount=float(total), currency="MAD", note=note,
-                          created_by=d.id)
+        c = PatientCharge(
+            doctor_id=d.id,
+            clinic_patient_id=cp.id,
+            label=label,
+            total_amount=float(total),
+            currency="MAD",
+            note=note,
+            created_by=d.id,
+        )
         session.add(c)
         session.flush()
         day = NOW - timedelta(days=60)
         for amt, method in payments:
             day = day + timedelta(days=15)
-            session.add(PatientPayment(charge_id=c.id, amount=float(amt),
-                        method=PaymentMethod(method), paid_at=day, created_by=d.id))
+            session.add(
+                PatientPayment(
+                    charge_id=c.id,
+                    amount=float(amt),
+                    method=PaymentMethod(method),
+                    paid_at=day,
+                    created_by=d.id,
+                )
+            )
         return c
 
     # 1) Braces, partially paid: 8000, down 3000 + 2000 → 3000 outstanding.
-    charge(register[0], "Appareil dentaire (bagues)", 8000,
-           [(3000, "CASH"), (2000, "CARD")], note="Traitement 18 mois.")
+    charge(
+        register[0],
+        "Appareil dentaire (bagues)",
+        8000,
+        [(3000, "CASH"), (2000, "CARD")],
+        note="Traitement 18 mois.",
+    )
     # 2) Braces, fully settled: 6000 in three instalments.
-    charge(register[1], "Appareil dentaire (bagues)", 6000,
-           [(2000, "CASH"), (2000, "CASH"), (2000, "TRANSFER")])
+    charge(
+        register[1],
+        "Appareil dentaire (bagues)",
+        6000,
+        [(2000, "CASH"), (2000, "CASH"), (2000, "TRANSFER")],
+    )
     # 3) Braces, nothing paid yet: 10000 outstanding.
     charge(register[2], "Appareil dentaire (bagues)", 10000, [], note="Début du traitement.")
     # 4) Cleaning, paid same day.
@@ -478,27 +848,39 @@ def _seed_ledger(session, dentists, patients) -> None:
 
 
 def _seed_pharmacy(session) -> None:
-    pharm = User(email="pharmacy@sehaty.ma", phone="+212533000005",
-                 password_hash=PW, role=UserRole.PHARMACY, is_active=True)
+    pharm = User(
+        email="pharmacy@sehaty.ma",
+        phone="+212533000005",
+        password_hash=PW,
+        role=UserRole.PHARMACY,
+        is_active=True,
+    )
     session.add(pharm)
     session.flush()
     products = [
         ("6111000000017", "Doliprane 1000mg", ProductKind.MEDICINE, 22.50, 120, 20),
-        ("6111000000024", "Efferalgan 500mg", ProductKind.MEDICINE, 18.00, 8, 15),   # low
+        ("6111000000024", "Efferalgan 500mg", ProductKind.MEDICINE, 18.00, 8, 15),  # low
         ("6111000000031", "Amoxicilline 500mg", ProductKind.MEDICINE, 45.00, 60, 20),
-        ("6111000000048", "Ventoline", ProductKind.MEDICINE, 38.00, 5, 10),           # low
+        ("6111000000048", "Ventoline", ProductKind.MEDICINE, 38.00, 5, 10),  # low
         ("6111000000055", "Smecta", ProductKind.MEDICINE, 30.00, 40, 15),
         ("6111000000062", "Vitamine C", ProductKind.MEDICINE, 25.00, 200, 30),
         ("6111000000079", "Crème solaire SPF50", ProductKind.COSMETIC, 89.00, 25, 10),
-        ("6111000000086", "Shampoing dermato", ProductKind.COSMETIC, 65.00, 3, 8),    # low
+        ("6111000000086", "Shampoing dermato", ProductKind.COSMETIC, 65.00, 3, 8),  # low
         ("6111000000093", "Sérum hydratant", ProductKind.COSMETIC, 120.00, 18, 6),
         ("6111000000109", "Gel hydroalcoolique", ProductKind.MEDICINE, 15.00, 300, 40),
     ]
     prods = []
     for barcode, name, kind, price, qty, low in products:
-        p = PharmacyProduct(pharmacy_id=pharm.id, barcode=barcode, name=name,
-                            kind=kind, price=price, quantity=qty, low_threshold=low,
-                            is_active=True)
+        p = PharmacyProduct(
+            pharmacy_id=pharm.id,
+            barcode=barcode,
+            name=name,
+            kind=kind,
+            price=price,
+            quantity=qty,
+            low_threshold=low,
+            is_active=True,
+        )
         session.add(p)
         prods.append(p)
     session.flush()
@@ -513,8 +895,16 @@ def _seed_pharmacy(session) -> None:
             q = random.randint(1, 3)
             line = round(pr.price * q, 2)
             total += line
-            session.add(SaleItem(sale_id=sale.id, product_id=pr.id, name=pr.name,
-                        quantity=q, unit_price=pr.price, line_total=line))
+            session.add(
+                SaleItem(
+                    sale_id=sale.id,
+                    product_id=pr.id,
+                    name=pr.name,
+                    quantity=q,
+                    unit_price=pr.price,
+                    line_total=line,
+                )
+            )
         sale.total = round(total, 2)
     session.flush()
 
@@ -527,10 +917,15 @@ def _name_of(user: User) -> str:
 def _print_summary(session: Session) -> None:
     def n(model):
         return session.execute(select(func.count()).select_from(model)).scalar_one()
+
     print("\n✅ Casablanca demo seed complete\n" + "-" * 40)
     print(f"  specialties        {n(Specialty)}")
-    print(f"  doctors            {session.execute(select(func.count()).select_from(User).where(User.role == UserRole.DOCTOR)).scalar_one()}")
-    print(f"  patients           {session.execute(select(func.count()).select_from(User).where(User.role == UserRole.PATIENT)).scalar_one()}")
+    print(
+        f"  doctors            {session.execute(select(func.count()).select_from(User).where(User.role == UserRole.DOCTOR)).scalar_one()}"
+    )
+    print(
+        f"  patients           {session.execute(select(func.count()).select_from(User).where(User.role == UserRole.PATIENT)).scalar_one()}"
+    )
     print(f"  appointments       {n(Appointment)}")
     print(f"  reviews            {n(Review)}")
     print(f"  ledger charges     {n(PatientCharge)}")

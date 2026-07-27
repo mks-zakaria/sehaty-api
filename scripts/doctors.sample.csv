@@ -1,0 +1,9 @@
+full_name,specialty,city,district,address,phone_fixe,phone_mobile,whatsapp,lat,lng,license_no,consultation_fee,languages
+Dr. Amina Bennani,dentistry,Casablanca,Maârif,"45 Rue Ibn Batouta, Maârif",+212522250180,+212661445566,+212661445566,33.5822,-7.6323,CAS-10021,350,fr|ar|ary
+Dr. Youssef Tazi,cardiology,Casablanca,Gauthier,"12 Boulevard d'Anfa, Gauthier",+212522277310,+212662118844,,33.5889,-7.6320,CAS-10022,450,fr|ar|en
+Dr. Salma Alaoui,dermatology,Casablanca,Anfa,"8 Rue Molière, Anfa",+212522364012,,,33.5950,-7.6560,,,fr|ar
+Dr. Hamza Idrissi,generalist,Casablanca,Hay Hassani,"210 Boulevard Oued Sebou, Hay Hassani",,+212670334455,+212670334455,33.5540,-7.6690,,150,ar|ary|fr
+Dr. Nadia Fassi,gynecology,Casablanca,Bourgogne,"33 Rue Jean Jaurès, Bourgogne",+212522490011,,,,,,400,fr|ar
+Dr. Omar Saidi,dentistry,Casablanca,Sidi Maârouf,"Lotissement La Colline, Sidi Maârouf",+212522581200,+212663778899,+212663778899,33.5290,-7.6560,,320,fr|ar
+Dr. Leila Berrada,ophthalmology,Casablanca,Racine,"7 Rue Ahmed Charci, Racine",+212522395544,,,33.5905,-7.6395,,350,fr|ar
+Dr. Karim Chraibi,pediatrics,Rabat,Agdal,"18 Avenue de France, Agdal",+212537670022,+212661223344,,34.0100,-6.8400,,250,fr|ar

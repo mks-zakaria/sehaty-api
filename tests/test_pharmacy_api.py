@@ -44,15 +44,21 @@ def _seed_prescription(db: sessionmaker[Session]) -> tuple[str, int]:
         s.add(doctor)
         s.flush()
         rx = Prescription(
-            doctor_id=doctor.id, code="RX-API-1", qr_token="tok-api-1",
-            status=PrescriptionStatus.ISSUED, issued_at=_NOW,
+            doctor_id=doctor.id,
+            code="RX-API-1",
+            qr_token="tok-api-1",
+            status=PrescriptionStatus.ISSUED,
+            issued_at=_NOW,
             expires_at=datetime.now(UTC) + timedelta(days=30),
         )
         s.add(rx)
         s.flush()
         item = PrescriptionItem(
-            prescription_id=rx.id, drug_name="Amoxicillin", dosage="1 tab",
-            frequency="2x/day", quantity=10,
+            prescription_id=rx.id,
+            drug_name="Amoxicillin",
+            dosage="1 tab",
+            frequency="2x/day",
+            quantity=10,
         )
         s.add(item)
         s.commit()
@@ -128,8 +134,13 @@ def test_pharmacy_register_sell_and_report(client: TestClient, db: sessionmaker[
     # Register a product and sell some of it.
     client.post(
         "/api/v1/pharmacy/products",
-        json={"barcode": "60001", "name": "Doliprane", "kind": "MEDICINE", "price": 20.0,
-              "quantity": 30},
+        json={
+            "barcode": "60001",
+            "name": "Doliprane",
+            "kind": "MEDICINE",
+            "price": 20.0,
+            "quantity": 30,
+        },
         headers=h,
     )
     sale = client.post(

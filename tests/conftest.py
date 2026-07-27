@@ -229,3 +229,20 @@ def pg_client(pg_db: sessionmaker[Session]) -> Iterator[TestClient]:
     """TestClient bound to the app with the live PostGIS DB active."""
     with TestClient(app) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def plans(db: sessionmaker[Session]) -> sessionmaker[Session]:
+    """Seed the plan catalogue, as a real deployment does once.
+
+    Accreditation starts a doctor's TRIALING subscription against a plan; with
+    an empty catalogue there is nothing to subscribe to and the doctor is
+    accredited into a dead agenda. Opt-in rather than automatic so the
+    seed-plans endpoint's own idempotency test still starts from empty.
+    """
+    with db() as session:
+        session.add(
+            Plan(code="basic", name="Basic", price_month=199.0, currency="MAD", is_active=True)
+        )
+        session.commit()
+    return db

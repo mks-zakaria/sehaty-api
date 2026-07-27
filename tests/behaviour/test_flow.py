@@ -180,7 +180,7 @@ def test_flow_doctor_profile_public_page(
     assert "rank" in found
 
 
-def test_flow_booking(client: TestClient, db: sessionmaker[Session]) -> None:
+def test_flow_booking(client: TestClient, db: sessionmaker[Session], plans) -> None:
     # Step 4 — register + accredit a doctor, who then opens a weekly
     # availability window; a patient books a derived slot and the doctor
     # confirms it. Non-geo, so this runs on the SQLite fixtures.

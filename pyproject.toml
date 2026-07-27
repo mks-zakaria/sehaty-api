@@ -22,6 +22,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.8", "mypy>=1.13", "python-semantic-release>=9"]
+# Print assets (waiting-room plaques + QR cards). Kept out of the runtime deps
+# so the API image does not carry a PDF engine it never uses; the generator is
+# an operator tool run from a laptop before a print shop visit.
+print = ["reportlab>=4.2", "segno>=1.6"]
 
 [tool.uv.sources]
 sehaty-core = { path = "../sehaty-core", editable = true }
@@ -47,6 +51,12 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# The demo seed is mostly wide literal data tables (one doctor/specialty/product
+# per line). Wrapping them to 100 columns makes the data harder to scan and edit,
+# which is the only thing that file is for.
+"scripts/seed_demo.py" = ["E501"]
 
 [tool.ruff.lint.flake8-bugbear]
 # FastAPI's dependency-injection markers are called in argument defaults by design.

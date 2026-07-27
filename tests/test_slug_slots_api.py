@@ -63,7 +63,9 @@ def _accredit(client: TestClient, db: sessionmaker[Session], doctor_id: int) -> 
     assert resp.status_code == 200, resp.text
 
 
-def test_slug_slots_verified_returns_slots(client: TestClient, db: sessionmaker[Session]) -> None:
+def test_slug_slots_verified_returns_slots(
+    client: TestClient, db: sessionmaker[Session], plans
+) -> None:
     doctor_id, doctor_token = _register_doctor(client, "1", "dr-slug-one")
     _accredit(client, db, doctor_id)
 
