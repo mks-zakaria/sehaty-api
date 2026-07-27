@@ -34,6 +34,7 @@ from sehaty.db import (
     Dispense,
     DispenseItem,
     DoctorAssistant,
+    DoctorLanding,
     DoctorProfile,
     DoctorSpecialty,
     FeatureFlag,
@@ -107,6 +108,8 @@ _TABLES = [
     DoctorAssistant.__table__,
     Review.__table__,
     ReputationScore.__table__,
+    # The public doctor view resolves the landing template from here.
+    DoctorLanding.__table__,
     Plan.__table__,
     Subscription.__table__,
     Invoice.__table__,

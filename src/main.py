@@ -32,6 +32,7 @@ from routers.doctor_appointments import router as doctor_appointments_router
 from routers.doctors import router as doctors_router
 from routers.export import router as export_router
 from routers.feedback import router as feedback_router
+from routers.landing_config import router as landing_config_router
 from routers.landing_events import router as landing_events_router
 from routers.messages import router as messages_router
 from routers.notifications import router as notifications_router
@@ -92,6 +93,7 @@ app.include_router(cities_router)
 app.include_router(claims_router)
 app.include_router(confirmations_router)
 app.include_router(landing_events_router)
+app.include_router(landing_config_router)
 app.include_router(reviews_router)
 app.include_router(admin_router)
 app.include_router(billing_router)
