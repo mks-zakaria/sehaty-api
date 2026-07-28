@@ -1,0 +1,72 @@
+name: maintenance
+
+# Run a one-off maintenance task against the production droplet, on demand.
+#
+# These are the jobs that have to happen on the box because they touch the
+# database directly and Postgres is not exposed off the droplet: seeding the
+# plans, importing a prospect list, firing the reminder sweep. Before this
+# existed they were run by hand over SSH, which meant they were run rarely and
+# nobody could see afterwards what had been run.
+#
+# Every task is idempotent by design, so re-running one is safe:
+#   - import-doctors  never duplicates (matched on slug) and never republishes
+#     a doctor who asked to be removed
+#   - seed-plans      creates the plans only if they are absent
+#   - run-reminders   stamps each appointment once
+#
+# The doctor CSV is NOT committed — the generator is, so the droplet rebuilds
+# an identical file from source at run time.
+#
+# Uses the same DO_HOST / DO_USER / DO_SSH_KEY secrets as deploy.yml.
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: What to run on the droplet
+        required: true
+        type: choice
+        options:
+          - import-doctors-dry-run
+          - import-doctors
+          - seed-plans
+          - run-reminders
+        default: import-doctors-dry-run
+
+concurrency:
+  # Shares the deploy group: never mutate the database while the stack is being
+  # rebuilt underneath it.
+  group: sehaty-droplet-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    env:
+      DO_HOST: ${{ secrets.DO_HOST }}
+    steps:
+      - name: Run ${{ inputs.task }} on the droplet
+        if: ${{ env.DO_HOST != '' }}
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          TASK: ${{ inputs.task }}
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          envs: TASK
+          script_stop: true
+          command_timeout: 20m
+          # appleboy runs this under the droplet's login shell; keep every line
+          # a single standalone command (no multi-line if/for/case constructs —
+          # the shell fails to parse them and aborts the whole script).
+          script: |
+            set -eu
+            cd /opt/sehaty/sehaty-api/deploy
+            test "$TASK" != "seed-plans" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python -c "from sehaty.core.controllers.billing import BillingController; print('plans created', len(BillingController.seed_plans()))"
+            test "$TASK" != "run-reminders" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python -c "from sehaty.core.controllers.appointments import AppointmentController; print('reminded', AppointmentController.run_reminders(within_hours=24))"
+            test "$TASK" != "import-doctors-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api sh -c "python scripts/build_errahma_csv.py > /tmp/doctors.csv && python scripts/import_doctors.py /tmp/doctors.csv --dry-run"
+            test "$TASK" != "import-doctors" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api sh -c "python scripts/build_errahma_csv.py > /tmp/doctors.csv && python scripts/import_doctors.py /tmp/doctors.csv"
