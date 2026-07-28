@@ -22,6 +22,8 @@ Usage:
     uv run python scripts/geocode_doctors.py --dry-run
     uv run python scripts/geocode_doctors.py
     uv run python scripts/geocode_doctors.py --city Casablanca --limit 50
+    # undo a pin dropped at the wrong address, one doctor at a time:
+    uv run python scripts/geocode_doctors.py --doctor 31 --force
 
 Nominatim's usage policy allows this volume with a real User-Agent and at most
 one request a second; both are enforced below rather than left to the caller.
@@ -120,6 +122,17 @@ def main() -> int:
     parser.add_argument("--city", default=None, help="only this city")
     parser.add_argument("--limit", type=int, default=200)
     parser.add_argument(
+        "--doctor",
+        type=int,
+        default=None,
+        help="only this doctor id; with --force, re-geocodes it whatever it holds",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="overwrite an EXACT pin — for undoing one dropped by mistake",
+    )
+    parser.add_argument(
         "--regeocode",
         action="store_true",
         help="also revisit rows that already have a point (never touches EXACT)",
@@ -130,11 +143,18 @@ def main() -> int:
         stmt = select(DoctorProfile).limit(args.limit)
         if args.city:
             stmt = stmt.where(DoctorProfile.city == args.city)
+        if args.doctor:
+            stmt = stmt.where(DoctorProfile.user_id == args.doctor)
         profiles = list(session.execute(stmt).scalars())
 
     todo = []
     for profile in profiles:
-        if profile.geopoint is None:
+        if args.force and args.doctor:
+            # Deliberate, one doctor at a time: the way to undo a pin dropped at
+            # the wrong address. Refusing to scope it means nobody can ever
+            # correct a mistake, which is worse than the risk of this flag.
+            todo.append(profile)
+        elif profile.geopoint is None:
             todo.append(profile)
         elif args.regeocode and profile.geo_precision == GeoPrecision.APPROXIMATE:
             # A hand-placed or self-entered EXACT point is better than anything
