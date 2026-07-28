@@ -46,6 +46,8 @@ on:
           - geocode-dry-run
           - geocode
           - reset-pin
+          - repair-addresses-dry-run
+          - repair-addresses
         default: import-doctors-dry-run
 
 concurrency:
@@ -89,6 +91,8 @@ jobs:
             test "$TASK" != "geocode" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/geocode_doctors.py
             test "$TASK" != "import-casablanca-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/import_doctors.py scripts/data/casablanca-2026-07-28.csv --dry-run
             test "$TASK" != "import-casablanca" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/import_doctors.py scripts/data/casablanca-2026-07-28.csv
+            test "$TASK" != "repair-addresses-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/repair_addresses.py --dry-run
+            test "$TASK" != "repair-addresses" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/repair_addresses.py
             test "$TASK" != "reset-pin" || test -n "$DOCTOR_ID"
             test "$TASK" != "reset-pin" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/geocode_doctors.py --doctor "$DOCTOR_ID" --force
             test "$TASK" != "import-doctors" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api sh -c "python scripts/build_errahma_csv.py > /tmp/doctors.csv && python scripts/import_doctors.py /tmp/doctors.csv"
