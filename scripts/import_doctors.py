@@ -40,6 +40,9 @@ Guarantees that matter:
   * **Never overwrites a real doctor's own edits.** Rows that are CLAIMED or
     VERIFIED are left untouched — an import must not clobber what a paying
     doctor typed about themselves.
+  * **Never claims verification.** Imported pages are LISTED: public and
+    searchable, with no "Vérifié" badge. That badge means a human checked a
+    licence, and an import has met nobody.
   * **No invented data.** Missing photo, hours, fee and insurance stay empty;
     the page renders shorter. Fabricating a plausible opening time would put
     wrong information on a real professional's public listing.
@@ -294,7 +297,12 @@ def import_row(
             license_no=_clean(row.get("license_no")) or f"IMPORT-{user.id}",
             # Published so the page is live and the city listing is populated;
             # the banner makes its unclaimed status plain on the page itself.
-            verification_status=VerificationStatus.VERIFIED,
+            # LISTED, never VERIFIED: the page is compiled from a public
+            # directory, which makes it legitimate to publish and says nothing
+            # about a licence anyone checked. Marking these VERIFIED — which an
+            # earlier version did, because the public read accepted nothing
+            # else — badged thousands of doctors nobody had ever spoken to.
+            verification_status=VerificationStatus.LISTED,
             claim_status=ClaimStatus.UNCLAIMED,
             source=ProfileSource.IMPORT,
             **fields,

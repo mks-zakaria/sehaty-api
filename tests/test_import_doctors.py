@@ -125,7 +125,9 @@ class TestImport:
         profile = _profile(db, "dr-amina-bennani-casablanca")
         assert profile is not None
         # Published so the city listing fills up...
-        assert profile.verification_status == VerificationStatus.VERIFIED
+        # LISTED, not VERIFIED: an import has met nobody, and the badge is a
+        # claim that a human checked a licence.
+        assert profile.verification_status == VerificationStatus.LISTED
         # ...but plainly marked as not the doctor's own.
         assert profile.claim_status == ClaimStatus.UNCLAIMED
         assert profile.source == ProfileSource.IMPORT
