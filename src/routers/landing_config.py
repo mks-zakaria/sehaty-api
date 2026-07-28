@@ -8,6 +8,7 @@ Body of each handler: parse -> ONE controller call -> return.
 """
 
 from fastapi import APIRouter, Depends
+from sehaty.core.controllers.availability import mirror_opening_hours
 from sehaty.core.controllers.claims import AccessGrant, grant_access
 from sehaty.core.controllers.doctors import DoctorController, DoctorView
 from sehaty.core.controllers.landing_config import (
@@ -118,7 +119,13 @@ def patch_profile(
     cannot carry and which an imported doctor cannot enter themselves (they have
     no login).
     """
-    DoctorController.patch_profile(
-        doctor_id, **body.model_dump(exclude_unset=True, exclude_none=True)
-    )
+    fields = body.model_dump(exclude_unset=True, exclude_none=True)
+    DoctorController.patch_profile(doctor_id, **fields)
+    if "opening_hours" in fields:
+        # The published hours and the bookable agenda are separate tables that
+        # look like one thing to everyone filling this form. Setting only the
+        # first leaves a doctor who has just bought the booking engine with an
+        # agenda that offers nothing, and nobody discovers it until a patient
+        # tries. A doctor states one set of hours and means both.
+        mirror_opening_hours(doctor_id)
     return DoctorController.get_for_admin(doctor_id)
