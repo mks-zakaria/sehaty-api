@@ -20,3 +20,4 @@ doctors-*.csv
 # doctor asks where their listing came from, the answer is a specific file with
 # a date and a per-row source rather than "a script, once, somehow".
 !scripts/data/*.csv
+.sitemap-cache/
