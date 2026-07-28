@@ -136,10 +136,11 @@ def main() -> int:
                 key = "phone_mobile" if number[1] in "67" else "phone_fixe"
                 if not row.get(key):
                     row[key] = number
-            # A mobile is also the WhatsApp line often enough to be worth
-            # proposing; the operator confirms it on the visit.
-            if row.get("phone_mobile") and not row.get("whatsapp"):
-                row["whatsapp"] = row["phone_mobile"]
+            # whatsapp is deliberately NOT filled from the mobile. Most
+            # Moroccan mobiles are on WhatsApp, but "most" puts a dead button on
+            # the pages of the ones that are not — and the page renders that
+            # button as a promise. It is a yes/no question worth ten seconds on
+            # the visit, so it stays empty until someone has asked.
         if index % 100 == 0:
             print(f"  {index}/{len(todo)} — {found} numbers so far", flush=True)
 
