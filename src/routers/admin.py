@@ -15,6 +15,7 @@ from sehaty.core.controllers.admin import (
     UserRow,
 )
 from sehaty.core.controllers.appointments import AppointmentController
+from sehaty.core.controllers.prospects import ProspectBoard, ProspectController
 from sehaty.core.controllers.reviews import ReviewController, ReviewRow
 from sehaty.db import User, UserRole
 
@@ -69,6 +70,21 @@ def revoke_professional(
     """Revoke a doctor's accreditation. 404 if no such profile."""
     AdminController.revoke(admin.id, user_id)
     return {"ok": True}
+
+
+@router.get("/prospects", response_model=ProspectBoard)
+def prospects(
+    city: str | None = Query(default=None),
+    district: str | None = Query(default=None),
+    onboarded: bool | None = Query(default=None),
+    plan: str | None = Query(default=None, pattern="^(landing|landing_rdv)$"),
+    limit: int = Query(default=500, ge=1, le=2000),
+    _admin: User = Depends(_require_admin),
+) -> ProspectBoard:
+    """The field list: every doctor, onboarding state, tier and how to drive there."""
+    return ProspectController.board(
+        city=city, district=district, onboarded=onboarded, plan=plan, limit=limit
+    )
 
 
 @router.get("/users", response_model=list[UserRow])
