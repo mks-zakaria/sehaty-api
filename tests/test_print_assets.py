@@ -107,6 +107,49 @@ class TestQrGeometry:
         assert all(20.0 <= y and y + h <= 70.0 + 1e-6 for _, y, _, h in recorder.rects)
 
 
+class TestPrintGuards:
+    """A printed QR encodes its domain permanently — a plaque on a wall cannot
+    be corrected, only reprinted. With the final domain still unsettled, the
+    generator must refuse to produce a print master against a guess."""
+
+    def test_refuses_when_no_domain_is_configured(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(print_assets, "SITE_URL", "")
+        problem = print_assets.check_site_url(allow_draft=False)
+        assert problem and "not set" in problem
+
+    def test_refuses_a_preview_host_for_printing(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        for host in (
+            "https://sehaty-landing.vercel.app",
+            "https://api.157.245.43.196.sslip.io",
+            "http://localhost:3000",
+        ):
+            monkeypatch.setattr(print_assets, "SITE_URL", host)
+            problem = print_assets.check_site_url(allow_draft=False)
+            assert problem, f"{host} should not be printable"
+
+    def test_allows_a_preview_host_as_a_draft(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(print_assets, "SITE_URL", "https://sehaty-landing.vercel.app")
+        assert print_assets.check_site_url(allow_draft=True) is None
+
+    def test_allows_a_real_domain(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(print_assets, "SITE_URL", "https://sehaty-maroc.ma")
+        assert print_assets.check_site_url(allow_draft=False) is None
+
+    def test_a_draft_is_still_scannable(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # The watermark must not sit over the code so densely that a preview
+        # cannot be tested on a real phone.
+        monkeypatch.setattr(print_assets, "SITE_URL", "https://sehaty-landing.vercel.app")
+        card = DoctorCard("dr-x", "Dr X", "Dentiste", "Casablanca")
+        assert card.url.startswith("https://sehaty-landing.vercel.app/dr/dr-x")
+
+    def test_printed_host_follows_the_configured_domain(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # The footer must never contradict the QR printed above it.
+        monkeypatch.setattr(print_assets, "SITE_URL", "https://sehaty-maroc.ma")
+        assert print_assets._site_host() == "sehaty-maroc.ma"
+
+
 class TestUrl:
     def test_carries_the_qr_attribution_marker(self) -> None:
         # Without ?src=qr a scan is indistinguishable from web traffic, and the
