@@ -42,6 +42,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
+from html import unescape
 
 USER_AGENT = "SehatyDirectory/0.1 (+contact.agrilogy@gmail.com)"
 RATE_LIMIT_SECONDS = 1.0
@@ -181,10 +182,16 @@ def display_name(raw: str) -> str:
 
 # --- telecontact ----------------------------------------------------------
 
-_TC_ROW = re.compile(
-    r'<a[^>]+href="/annonceur/([a-z0-9-]+)/(\d+)/([a-z0-9-]+)\.php"[^>]*>(.*?)</a>',
-    re.S,
-)
+# Telecontact marks up each listing as schema.org/LocalBusiness. Splitting on
+# the item wrapper and reading itemprop is the difference between an address and
+# whatever text happened to follow the link — the first version of this scraper
+# grabbed the star-rating widget for all 374 rows.
+# Listings come in three flavours of wrapper class (-entreprise, -profession,
+# -non-annonceur). They share the schema.org itemtype, so split on that rather
+# than on any one class and silently miss two thirds of the page.
+_TC_ITEM = re.compile(r"schema\.org/LocalBusiness([\s\S]*?)(?=schema\.org/LocalBusiness|\Z)")
+_TC_ID = re.compile(r'data-id="(\d+)"\s+data-value="([^"]*)"')
+_TC_STREET = re.compile(r'itemprop="streetAddress"[^>]*>([^<]+)<')
 
 
 def scrape_telecontact(specialty: str, ville: str) -> list[Listing]:
@@ -195,20 +202,28 @@ def scrape_telecontact(specialty: str, ville: str) -> list[Listing]:
 
     out: list[Listing] = []
     seen: set[str] = set()
-    for _slug, listing_id, _ville, inner in _TC_ROW.findall(html):
-        if listing_id in seen:
+    for block in _TC_ITEM.findall(html):
+        id_match = _TC_ID.search(block)
+        if not id_match:
+            continue
+        listing_id, name = id_match.group(1), unescape(id_match.group(2)).strip()
+        if listing_id in seen or len(name) < 3:
             continue
         seen.add(listing_id)
-        name = strip_tags(inner)
-        if not name or len(name) < 3:
+
+        # Telecontact files labs and pharmacies under clinical rubriques; they
+        # are real businesses but they are not the doctor this row claims to be.
+        if re.match(r"(laboratoire|pharmacie|opticien|parapharmacie)\b", name, re.I):
             continue
-        # The address is the text between this link and the next one.
-        after = html.split(f"/{listing_id}/", 1)[-1]
-        chunk = strip_tags(after[:600])
-        address = ""
-        match = re.search(re.escape(name) + r"\s*(.{5,180}?)\s*(?:Voir|Itin|Plan|$)", chunk)
-        if match:
-            address = match.group(1).strip(" .,-|")
+
+        street = _TC_STREET.search(block)
+        address = unescape(street.group(1)).strip() if street else ""
+        # The block repeats "<postcode> <city> Maroc"; the street is what is left.
+        address = re.sub(r"\s*\d{5}\s+[A-Za-zÀ-ÿ' -]+\s+Maroc\s*$", "", address).strip(" .,-")
+        if "<" in address or "☆" in address:
+            # Refuse rather than publish markup on a real person's page.
+            address = ""
+
         out.append(
             Listing(
                 full_name=display_name(name),
