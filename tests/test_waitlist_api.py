@@ -108,9 +108,7 @@ def test_a_released_slot_reaches_the_patient_who_can_then_take_it(
     assert offered[0]["offer_expires_at"] is not None
     assert offered[0]["doctor_slug"] == "dr-waitlist-1"
 
-    accept = client.post(
-        f"/api/v1/waitlist/{entry_id}/accept", headers=_auth(waiting_token)
-    )
+    accept = client.post(f"/api/v1/waitlist/{entry_id}/accept", headers=_auth(waiting_token))
     assert accept.status_code == 200, accept.text
     assert accept.json()["appointment_id"]
 
@@ -162,9 +160,7 @@ def test_declining_keeps_the_place_in_the_queue(
         f"/api/v1/appointments/{int(book.json()['id'])}/release", headers=_auth(doctor_token)
     )
 
-    decline = client.post(
-        f"/api/v1/waitlist/{entry_id}/decline", headers=_auth(waiting_token)
-    )
+    decline = client.post(f"/api/v1/waitlist/{entry_id}/decline", headers=_auth(waiting_token))
     assert decline.status_code == 204, decline.text
 
     # Turning one slot down is not leaving the list — a patient who declines a
