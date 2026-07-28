@@ -55,10 +55,17 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
 )
 
+# A wildcard origin and credentialled requests are mutually exclusive: a browser
+# rejects `Access-Control-Allow-Origin: *` on any request carrying credentials,
+# so the permissive dev default has to drop credentials to work at all.
+_allows_any = settings.cors_allows_any
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
-    allow_credentials=True,
+    # The regex catches this team's Vercel deployments, whose hostnames change
+    # on every deploy and cannot be enumerated ahead of time.
+    allow_origin_regex=None if _allows_any else (settings.cors_origin_regex or None),
+    allow_credentials=not _allows_any,
     allow_methods=["*"],
     allow_headers=["*"],
 )
