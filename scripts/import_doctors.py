@@ -16,11 +16,17 @@ CSV columns (header row required). Only `full_name` and `specialty` are
 mandatory; everything else is filled in on the visit:
 
     full_name,specialty,city,district,address,phone_fixe,phone_mobile,
-    whatsapp,lat,lng,license_no,consultation_fee,languages
+    whatsapp,lat,lng,license_no,consultation_fee,languages,insurances,hours
 
   * `specialty`  — a specialty **slug** that must already exist (`dentistry`,
                    `cardiology`, …). Unknown slugs are reported, not invented.
   * `languages`  — pipe-separated: `fr|ar|ary`.
+  * `insurances` — pipe-separated payer slugs: `cnss|cnops|amo`.
+  * `hours`      — compact weekly form, semicolons between days:
+                   `1:09:00-12:30,15:00-19:00; 6:09:00-13:00`
+                   where the leading digit is 1=Monday … 7=Sunday. A day that
+                   is absent is closed. Malformed entries fail the row rather
+                   than publishing wrong opening times.
   * `lat`/`lng`  — decimal degrees; both or neither.
 
 Guarantees that matter:
@@ -44,6 +50,7 @@ from __future__ import annotations
 import argparse
 import csv
 import os
+import re
 import sys
 import unicodedata
 from dataclasses import dataclass, field
@@ -69,6 +76,8 @@ _SRID = 4326
 # NOT NULL/unique constraint satisfied without implying we can email them —
 # and makes it obvious in the DB that nobody has signed up yet.
 _PLACEHOLDER_EMAIL_DOMAIN = "import.invalid"
+# Zero-padded 24h times, matching what the model and the page expect.
+_HHMM = re.compile(r"([01]\d|2[0-3]):[0-5]\d")
 
 
 @dataclass
@@ -106,6 +115,50 @@ def doctor_slug(full_name: str, city: str | None) -> str:
     if city:
         parts.append(place_slug(city))
     return "-".join(p for p in parts if p)
+
+
+def _parse_hours(value: str | None, row_no: int) -> list[dict] | None:
+    """Parse the compact `1:09:00-12:30,15:00-19:00; 6:09:00-13:00` form.
+
+    Returns None for a blank cell so the column stays optional. Anything
+    malformed raises: wrong opening hours on a public page send patients to a
+    closed door, which is worse than showing none.
+    """
+    cleaned = _clean(value)
+    if cleaned is None:
+        return None
+
+    out: list[dict] = []
+    for chunk in cleaned.split(";"):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        day, _, spans = chunk.partition(":")
+        if not spans or not day.strip().isdigit():
+            raise ValueError(f"row {row_no}: bad hours entry {chunk!r}")
+        weekday = int(day.strip()) - 1  # sheet is 1=Monday; storage is 0=Monday
+        if not 0 <= weekday <= 6:
+            raise ValueError(f"row {row_no}: weekday must be 1-7, got {day!r}")
+
+        ranges: list[list[str]] = []
+        for span in spans.split(","):
+            start, sep, end = span.strip().partition("-")
+            if not sep:
+                raise ValueError(f"row {row_no}: bad time range {span!r}")
+            start, end = start.strip(), end.strip()
+            # Times are validated here, not downstream: the importer writes
+            # straight to the model, so a malformed "0900" would otherwise land
+            # in the database and break the page's hours and its JSON-LD.
+            for value in (start, end):
+                if not _HHMM.fullmatch(value):
+                    raise ValueError(f"row {row_no}: time must be HH:MM, got {value!r}")
+            if start >= end:
+                raise ValueError(f"row {row_no}: range start must precede end: {span!r}")
+            ranges.append([start, end])
+        if ranges:
+            out.append({"weekday": weekday, "ranges": ranges})
+
+    return sorted(out, key=lambda e: e["weekday"])
 
 
 def _clean(value: str | None) -> str | None:
@@ -198,6 +251,18 @@ def import_row(
         "consultation_fee": _parse_float(row.get("consultation_fee"), "consultation_fee", row_no),
         "languages": languages,
     }
+    # Optional columns: only written when the sheet actually carries them, so a
+    # re-import from a thinner CSV never blanks hours somebody typed by hand.
+    insurances = [
+        code.strip().lower()
+        for code in (_clean(row.get("insurances")) or "").split("|")
+        if code.strip()
+    ]
+    if insurances:
+        fields["insurances"] = insurances
+    hours = _parse_hours(row.get("hours"), row_no)
+    if hours is not None:
+        fields["opening_hours"] = hours
 
     if dry_run:
         stats.updated += 1 if existing else 0

@@ -268,6 +268,37 @@ class TestValidation:
             assert s.execute(select(DoctorProfile)).scalars().all() == []
 
 
+class TestHoursColumn:
+    """The compact `1:09:00-12:30,15:00-19:00; 6:09:00-13:00` weekly form."""
+
+    def test_parses_days_and_ranges(self) -> None:
+        parsed = import_doctors._parse_hours("1:09:00-12:30,15:00-19:00; 6:09:00-13:00", 2)
+        assert parsed == [
+            {"weekday": 0, "ranges": [["09:00", "12:30"], ["15:00", "19:00"]]},
+            {"weekday": 5, "ranges": [["09:00", "13:00"]]},
+        ]
+
+    def test_sheet_is_one_indexed_but_storage_is_zero_indexed(self) -> None:
+        # Operators write 1=Monday; the column stores 0=Monday. Getting this
+        # backwards would publish every cabinet's hours a day out.
+        assert import_doctors._parse_hours("7:10:00-14:00", 2) == [
+            {"weekday": 6, "ranges": [["10:00", "14:00"]]}
+        ]
+
+    def test_blank_leaves_the_column_untouched(self) -> None:
+        # None, not [] — a thin re-import must not blank hours typed by hand.
+        assert import_doctors._parse_hours("", 2) is None
+        assert import_doctors._parse_hours(None, 2) is None
+
+    @pytest.mark.parametrize(
+        "bad", ["9:09:00-10:00", "0:09:00-10:00", "1:0900-1000", "monday:9-10"]
+    )
+    def test_rejects_malformed_entries(self, bad: str) -> None:
+        # Wrong opening hours send a patient to a closed door — worse than none.
+        with pytest.raises(ValueError):
+            import_doctors._parse_hours(bad, 2)
+
+
 class TestSampleCsv:
     def test_the_shipped_sample_imports_cleanly(
         self, db: sessionmaker[Session], specialties: dict[str, int]
@@ -280,6 +311,10 @@ class TestSampleCsv:
             rows = list(csv.DictReader(handle))
 
         assert rows, "sample CSV is empty"
+        # The hours column contains commas, so it must be quoted — an unquoted
+        # value silently spills into extra columns and corrupts every later
+        # field. csv.DictReader surfaces that as a None key.
+        assert all(r.get(None) is None for r in rows), "a row has unquoted commas"
         # Only the two seeded specialties exist here; the rest are legitimately
         # unknown, so assert on the rows we can actually import.
         known = [r for r in rows if r["specialty"] in specialties]

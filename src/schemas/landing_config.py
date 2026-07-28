@@ -40,3 +40,31 @@ class PersonalizedIn(BaseModel):
     """Turn the paid personalisation on or off — recorded when the pack sells."""
 
     enabled: bool
+
+
+class DoctorProfilePatchIn(BaseModel):
+    """Partial profile edit from the console — omitted fields stay untouched.
+
+    Distinct from `DoctorProfileIn`, which is the doctor's own form and posts
+    every field. Staff send only what they collected during the visit, so a
+    replace-everything body would wipe values the operator never saw.
+    """
+
+    full_name: str | None = None
+    bio: str | None = None
+    photo_url: str | None = None
+    address: str | None = None
+    city: str | None = None
+    district: str | None = None
+    lat: float | None = None
+    lng: float | None = None
+    consultation_fee: float | None = None
+    languages: list[str] | None = None
+    timezone: str | None = None
+    phone_fixe: str | None = None
+    phone_mobile: str | None = None
+    whatsapp: str | None = None
+    opening_hours: list[dict] | None = None
+    insurances: list[str] | None = None
+    tiers_payant: bool | None = None
+    specialty_slugs: list[str] | None = None
