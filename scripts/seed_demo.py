@@ -50,6 +50,7 @@ from sehaty.db import (
     Notification,
     PatientCharge,
     PatientPayment,
+    PatientProfile,
     PaymentMethod,
     PharmacyProduct,
     Plan,
@@ -497,9 +498,7 @@ def main() -> None:
 
         # -- Patients ------------------------------------------------------
         patients: list[User] = []
-        # Name/sex/birth are unpacked for readability but the User row only needs
-        # the index; the profile fields are set further down.
-        for i, (_name, _sex, _birth) in enumerate(PATIENTS, start=1):
+        for i, (name, _sex, _birth) in enumerate(PATIENTS, start=1):
             u = User(
                 email=f"patient{i}@example.ma",
                 phone=f"+21260000{i:04d}",
@@ -510,6 +509,11 @@ def main() -> None:
             )
             session.add(u)
             session.flush()
+            # Without a profile the patient has no name anywhere it is read
+            # from PatientProfile — the secretary's day view then shows every
+            # row as "Patient", which is worse than useless when the job is to
+            # phone the ones at risk.
+            session.add(PatientProfile(user_id=u.id, full_name=name, city="Casablanca"))
             patients.append(u)
         session.flush()
 
