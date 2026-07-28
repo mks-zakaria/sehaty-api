@@ -10,3 +10,8 @@ dist/
 
 # Local agent session files
 .claude/
+
+# Harvested prospect lists: real practitioners' contact details.
+# The generator is tracked; the output is not.
+doctors-*.csv
+!scripts/doctors.sample.csv
