@@ -232,7 +232,8 @@ LISTINGS: list[tuple[str, str, str, str, str, str]] = [
         "Lamrani Sanaa",
         "generalist",
         "Errahma",
-        "hay Madinat Arrahma - Casablanca II, cmplx. Attawhid, GH22, imm. 149, rdc n°4, Dar Bouazza",
+        "hay Madinat Arrahma - Casablanca II, cmplx. Attawhid, GH22, "
+        "imm. 149, rdc n°4, Dar Bouazza",
         "",
         TC,
     ),
