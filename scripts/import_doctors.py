@@ -76,6 +76,8 @@ _SRID = 4326
 # NOT NULL/unique constraint satisfied without implying we can email them —
 # and makes it obvious in the DB that nobody has signed up yet.
 _PLACEHOLDER_EMAIL_DOMAIN = "import.invalid"
+# A value carrying markup is not something a person wrote — see the guard below.
+_MARKUP = re.compile(r"<|>|☆|\(\d+\s*avis\)|class=|href=|&[a-z]+;|https?://")
 # Zero-padded 24h times, matching what the model and the page expect.
 _HHMM = re.compile(r"([01]\d|2[0-3]):[0-5]\d")
 
@@ -213,6 +215,15 @@ def import_row(
         # Reported, never invented: a made-up specialty would put a doctor on
         # the wrong browse page.
         raise ValueError(f"row {row_no}: unknown specialty slug {specialty_slug!r}")
+
+    # A scraper once fed the star-rating widget in as an address and published
+    # "☆ ☆ ☆ ☆ ☆ (0 avis) <div class=..." on 374 real practitioners' pages.
+    # The boundary is the right place to refuse that: whatever generates the CSV
+    # next, a value carrying markup is not an address anyone wrote.
+    for column in ("full_name", "address", "district", "city"):
+        value = _clean(row.get(column)) or ""
+        if _MARKUP.search(value):
+            raise ValueError(f"row {row_no}: {column} contains markup: {value[:40]!r}")
 
     city = _clean(row.get("city"))
     lat = _parse_float(row.get("lat"), "lat", row_no)
