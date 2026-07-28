@@ -21,9 +21,9 @@ from geoalchemy2 import Geography
 from geoalchemy2 import functions as geo_functions
 from sehaty.core.db import session as session_mod
 from sehaty.db import (
-    Article,
     AdminConfig,
     Appointment,
+    Article,
     AuditLog,
     Availability,
     AvailabilityException,
