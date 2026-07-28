@@ -21,6 +21,7 @@ from geoalchemy2 import Geography
 from geoalchemy2 import functions as geo_functions
 from sehaty.core.db import session as session_mod
 from sehaty.db import (
+    Article,
     AdminConfig,
     Appointment,
     AuditLog,
@@ -141,6 +142,8 @@ _TABLES = [
     # The day view's ask, and the queue a freed slot is offered on to.
     OutboundMessage.__table__,
     WaitlistEntry.__table__,
+    # Doctor-written answers, and the review gate in front of them.
+    Article.__table__,
 ]
 
 
