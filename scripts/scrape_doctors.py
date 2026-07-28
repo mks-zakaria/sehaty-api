@@ -126,6 +126,11 @@ class Listing:
     source: str = ""
     source_name: str = ""
     source_id: str = ""
+    # The listing's own link to the practitioner page. Captured rather than
+    # rebuilt from the name: telecontact slugs carry quirks a reconstruction
+    # cannot guess ("outegda-saida-" keeps a trailing hyphen), and a wrong URL
+    # silently yields no phone rather than an error.
+    source_url: str = ""
 
 
 @dataclass
@@ -192,6 +197,7 @@ def display_name(raw: str) -> str:
 _TC_ITEM = re.compile(r"schema\.org/LocalBusiness([\s\S]*?)(?=schema\.org/LocalBusiness|\Z)")
 _TC_ID = re.compile(r'data-id="(\d+)"\s+data-value="([^"]*)"')
 _TC_STREET = re.compile(r'itemprop="streetAddress"[^>]*>([^<]+)<')
+_TC_HREF = re.compile(r'href="(/annonceur/[^"]+\.php)\s*"')
 
 
 def scrape_telecontact(specialty: str, ville: str) -> list[Listing]:
@@ -235,6 +241,11 @@ def scrape_telecontact(specialty: str, ville: str) -> list[Listing]:
                 source="telecontact.ma",
                 source_name=name,
                 source_id=listing_id,
+                source_url=(
+                    "https://www.telecontact.ma" + href.group(1).strip()
+                    if (href := _TC_HREF.search(block))
+                    else ""
+                ),
             )
         )
     return out
@@ -246,6 +257,7 @@ _ERDV_BLOCK = re.compile(
     r'<div class="col fiche">([\s\S]*?)(?=<div class="col fiche">|<div class="row line-search|\Z)'
 )
 _ERDV_NAME = re.compile(r'data-id="MA(\d+)"\s+data-value="([^"]+)"')
+_ERDV_HREF = re.compile(r'href="(https://www\.e-rdv\.ma/rdv/[^"]+\.html)"')
 _ERDV_ADDR = re.compile(
     r'<p style="font-size:14px;padding-top: 5px;padding-left: 6px;">([\s\S]{0,300}?)<strong>'
 )
@@ -278,6 +290,7 @@ def scrape_erdv_page(specialty: str, city: str, page: int) -> list[Listing]:
                 source="e-rdv.ma",
                 source_name=name,
                 source_id=listing_id,
+                source_url=(m.group(1) if (m := _ERDV_HREF.search(block)) else ""),
             )
         )
     return out
@@ -325,6 +338,11 @@ COLUMNS = [
     "hours",
     "source_name",
     "source",
+    # The listing id, kept so enrich_phones can build the practitioner's own
+    # page URL later. Neither directory publishes a number on its category
+    # pages, so the number always costs a second request.
+    "source_id",
+    "source_url",
 ]
 
 
@@ -393,6 +411,8 @@ def main() -> int:
                     "address": item.address,
                     "source_name": item.source_name,
                     "source": item.source,
+                    "source_id": item.source_id,
+                    "source_url": item.source_url,
                 }
             )
     print(f"wrote {args.out}")
