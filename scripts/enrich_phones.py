@@ -31,10 +31,12 @@ import csv
 import re
 import sys
 import time
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
 from html import unescape
+from pathlib import Path
 
 USER_AGENT = "SehatyDirectory/0.1 (+contact.agrilogy@gmail.com)"
 RATE_LIMIT_SECONDS = 1.0
@@ -50,6 +52,40 @@ _ERDV_TEL = re.compile(r"<strong>\s*Tel:\s*</strong>\s*([0-9 .\-]{9,20})")
 _TC_TEL = re.compile(r'href="tel:([0-9 .\-+()]{9,22})"[^>]*>\s*<label>\s*Tel')
 
 _DIGITS = re.compile(r"\D+")
+
+# Telecontact's sitemap is advertised in its robots.txt and lists every
+# annonceur page. Their on-site search is Disallow'd, so this is the sanctioned
+# way to find a practitioner who was never on the rubrique listing we walked.
+SITEMAPS = [f"https://www.telecontact.ma/sitemap_annonceur_ville_{n}.xml" for n in range(1, 7)]
+_SITEMAP_URL = re.compile(
+    r"<loc>(https://www\.telecontact\.ma/annonceur/(.+?)/(\d+)/([a-z0-9-]+)\.php)</loc>"
+)
+# The page's own rubrique links, used to prove the name match is the same trade.
+_RUBRIQUE = re.compile(r'href="/liens/([a-z0-9-]+)/')
+RUBRIQUE_SPECIALTY = {
+    "medecins-generalistes": "generalist",
+    "medecin-generaliste": "generalist",
+    "chirurgiens-dentistes": "dentistry",
+    "chirurgien-dentiste": "dentistry",
+    "dentiste": "dentistry",
+    "cardiologues": "cardiology",
+    "cardiologue": "cardiology",
+    "dermatologues": "dermatology",
+    "dermatologue": "dermatology",
+    "gynecologues": "gynecology",
+    "gynecologue": "gynecology",
+    "ophtalmologues": "ophthalmology",
+    "ophtalmologue": "ophthalmology",
+    "pediatres": "pediatrics",
+    "pediatre": "pediatrics",
+    "psychiatres": "psychiatry",
+    "psychiatre": "psychiatry",
+    "orl": "otolaryngology",
+    "chirurgiens-orthopedistes": "orthopedics",
+    "chirurgien-orthopediste": "orthopedics",
+    "orthopedistes": "orthopedics",
+    "orthopediste": "orthopedics",
+}
 
 
 def normalise(raw: str) -> str | None:
@@ -98,12 +134,89 @@ def phones_from_telecontact(url: str) -> list[str]:
     return out
 
 
+def fold(text: str) -> str:
+    """Compare names ignoring case, accents and punctuation.
+
+    Telecontact slugs carry quirks — "outegda-saida-" keeps a trailing hyphen —
+    so folding both sides to bare alphanumerics is what makes them comparable.
+    """
+    decomposed = unicodedata.normalize("NFKD", text.lower())
+    ascii_only = "".join(c for c in decomposed if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]", "", ascii_only)
+
+
+def fold_ville(city: str) -> str:
+    """ "Dar Bouazza" -> "dar-bouazza", matching the sitemap's ville segment."""
+    decomposed = unicodedata.normalize("NFKD", city.lower())
+    ascii_only = "".join(c for c in decomposed if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]+", "-", ascii_only).strip("-")
+
+
+def build_sitemap_index(cache_dir: Path, villes: set[str]) -> dict[str, str]:
+    """Folded practitioner name -> annonceur URL, for the towns we cover.
+
+    Cached on disk: the six shards are ~60 MB in total and there is no reason to
+    pull them again on a re-run.
+    """
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    index: dict[str, str] = {}
+    for number, url in enumerate(SITEMAPS, 1):
+        path = cache_dir / f"sitemap_{number}.xml"
+        if not path.exists() or path.stat().st_size < 1000:
+            body = fetch(url)
+            if not body:
+                print(f"  ! sitemap {number} unavailable — skipped", file=sys.stderr)
+                continue
+            path.write_text(body, encoding="utf-8")
+        for full, slug, _id, ville in _SITEMAP_URL.findall(
+            path.read_text(encoding="utf-8", errors="ignore")
+        ):
+            if ville in villes:
+                # First wins: shards are ordered, and a duplicate name is a
+                # coin flip we should not silently re-flip on every run.
+                index.setdefault(fold(slug), full)
+    return index
+
+
+def phones_by_name(url: str, expect_specialty: str) -> tuple[list[str], str | None]:
+    """Numbers from a name-matched page, but only if the trade matches.
+
+    A name match alone is not identity: Casablanca has plumbers and pharmacies
+    sharing surnames with doctors, and putting a plumber's line on a doctor's
+    page is worse than leaving it blank. So the page has to categorise itself
+    under the specialty we already believe, or nothing is taken from it.
+    """
+    html = fetch(url)
+    if not html:
+        return [], None
+    found = {
+        RUBRIQUE_SPECIALTY[slug] for slug in _RUBRIQUE.findall(html) if slug in RUBRIQUE_SPECIALTY
+    }
+    if not found:
+        return [], "not-medical"
+    if expect_specialty not in found:
+        return [], "other-specialty"
+
+    out: list[str] = []
+    for raw in _TC_TEL.findall(html):
+        number = normalise(unescape(raw))
+        if number and number not in out:
+            out.append(number)
+    return out, None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--in", dest="path", required=True)
     parser.add_argument("--out", dest="out", default=None, help="defaults to in-place")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--limit", type=int, default=0, help="0 = every row")
+    parser.add_argument(
+        "--sitemap",
+        action="store_true",
+        help="second pass: look rows up in telecontact's sitemap by name",
+    )
+    parser.add_argument("--cache", default=".sitemap-cache")
     args = parser.parse_args()
 
     with open(args.path, newline="", encoding="utf-8") as handle:
@@ -115,12 +228,32 @@ def main() -> int:
         todo = todo[: args.limit]
     print(f"{len(rows)} rows, {len(todo)} without a number")
 
+    index_by_name: dict[str, str] = {}
+    if args.sitemap:
+        villes = {fold_ville(r.get("city", "")) for r in rows if r.get("city")}
+        villes |= {"casablanca"}
+        index_by_name = build_sitemap_index(Path(args.cache), villes)
+        print(f"sitemap index: {len(index_by_name)} names across {sorted(villes)}")
+
     found = 0
+    rejected = {"not-medical": 0, "other-specialty": 0, "no-match": 0}
     for index, row in enumerate(todo, 1):
         source, url = row.get("source", ""), row.get("source_url", "")
-        if not url:
+
+        if args.sitemap:
+            # Second pass: this row's own directory published no number, so look
+            # the person up on telecontact by name instead.
+            match = index_by_name.get(fold(row.get("source_name", "")))
+            if not match:
+                rejected["no-match"] += 1
+                numbers = []
+            else:
+                numbers, why = phones_by_name(match, row.get("specialty", ""))
+                if why:
+                    rejected[why] += 1
+        elif not url:
             continue
-        if "e-rdv" in source:
+        elif "e-rdv" in source:
             numbers = phones_from_erdv(url)
         elif "telecontact" in source:
             numbers = phones_from_telecontact(url)
@@ -145,6 +278,15 @@ def main() -> int:
             print(f"  {index}/{len(todo)} — {found} numbers so far", flush=True)
 
     print(f"found {found} of {len(todo)} ({found * 100 // max(len(todo), 1)}%)")
+    if args.sitemap:
+        # Say what was refused and why. A silent rejection is indistinguishable
+        # from a source with no numbers, which is how the first two attempts at
+        # this looked like an empty directory rather than a broken lookup.
+        print(
+            f"  no name in sitemap  : {rejected['no-match']}\n"
+            f"  page not a medic    : {rejected['not-medical']}\n"
+            f"  different specialty : {rejected['other-specialty']}"
+        )
 
     if args.dry_run:
         print("[dry-run] nothing written")
