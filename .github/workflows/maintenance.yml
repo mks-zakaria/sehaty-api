@@ -41,6 +41,8 @@ on:
           - import-doctors
           - import-casablanca-dry-run
           - import-casablanca
+          - import-rabat-dry-run
+          - import-rabat
           - seed-plans
           - run-reminders
           - geocode-dry-run
@@ -87,6 +89,8 @@ jobs:
             test "$TASK" != "seed-plans" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python -c "from sehaty.core.controllers.billing import BillingController; print('plans created', len(BillingController.seed_plans()))"
             test "$TASK" != "run-reminders" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python -c "from sehaty.core.controllers.appointments import AppointmentController; print('reminded', AppointmentController.run_reminders(within_hours=24))"
             test "$TASK" != "import-doctors-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api sh -c "python scripts/build_errahma_csv.py > /tmp/doctors.csv && python scripts/import_doctors.py /tmp/doctors.csv --dry-run"
+            test "$TASK" != "import-rabat-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/import_doctors.py scripts/data/rabat-2026-07-29.csv --dry-run
+            test "$TASK" != "import-rabat" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/import_doctors.py scripts/data/rabat-2026-07-29.csv
             test "$TASK" != "geocode-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/geocode_doctors.py --dry-run
             test "$TASK" != "geocode" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/geocode_doctors.py
             test "$TASK" != "import-casablanca-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/import_doctors.py scripts/data/casablanca-2026-07-28.csv --dry-run
