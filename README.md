@@ -78,9 +78,20 @@ dependencies so the API image carries no PDF engine.
 
 ```bash
 uv run python scripts/import_doctors.py scripts/doctors.sample.csv --dry-run
-uv run --extra print python scripts/print_assets.py --csv scripts/doctors.sample.csv --out ./print
+
+# Print assets need the domain the QR will encode. There is no default: a
+# plaque on a waiting-room wall cannot be corrected, only reprinted, and the
+# final domain is not settled yet.
+SEHATY_SITE_URL=https://sehaty-landing.vercel.app \
+  uv run --extra print python scripts/print_assets.py \
+  --csv scripts/doctors.sample.csv --out ./print --draft   # watermarked preview
+
 uv run --extra print python scripts/sales_sheet.py --out ./print
 ```
+
+`--draft` stamps every page "NE PAS IMPRIMER" and is the only way to generate
+against a preview host. Drop it, and set `SEHATY_SITE_URL` to the real domain,
+once that is confirmed.
 
 QR codes are drawn as vector rectangles rather than embedded bitmaps, and every
 one carries `?src=qr` so scans are attributable in the landing analytics. The

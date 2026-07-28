@@ -59,7 +59,17 @@ INK = HexColor("#0f172a")
 MUTED = HexColor("#64748b")
 HAIRLINE = Color(0.85, 0.87, 0.90)
 
-SITE_URL = os.environ.get("SEHATY_SITE_URL", "https://sehaty.ma").rstrip("/")
+# The domain a printed QR encodes is permanent: a plaque on a waiting-room wall
+# cannot be corrected, only reprinted. The final domain is not settled yet
+# (sehaty-maroc.ma pending), so there is deliberately NO default here — the
+# generator refuses to run rather than bake a guess into ink.
+SITE_URL = (os.environ.get("SEHATY_SITE_URL") or "").rstrip("/")
+
+# Hosts that are fine to preview from but must never reach a print shop.
+_NOT_FOR_PRINT = ("vercel.app", "sslip.io", "localhost", "127.0.0.1")
+
+# Set by --draft. Read inside the draw functions, which own their page breaks.
+DRAFT = False
 
 # Card geometry: standard Moroccan business-card size, 2 columns x 5 rows on A4.
 CARD_W, CARD_H = 85 * mm, 55 * mm
@@ -216,8 +226,11 @@ def draw_plaque(pdf: canvas.Canvas, doctor: DoctorCard) -> None:
     pdf.line(margin, 18 * mm, width - margin, 18 * mm)
     pdf.setFillColor(MUTED)
     pdf.setFont("Helvetica", 8)
-    pdf.drawCentredString(width / 2, 12 * mm, "sehaty.ma — votre santé, simplement")
+    # Derived from SITE_URL so the footer can never contradict the QR above it.
+    pdf.drawCentredString(width / 2, 12 * mm, f"{_site_host()} — votre santé, simplement")
 
+    if DRAFT:
+        _draft_watermark(pdf, width, height)
     pdf.showPage()
 
 
@@ -252,7 +265,7 @@ def _draw_card(pdf: canvas.Canvas, doctor: DoctorCard, x: float, y: float) -> No
     pdf.drawString(text_x, y + 14 * mm, "Scannez ce code")
     pdf.setFillColor(BRAND)
     pdf.setFont("Helvetica", 6.5)
-    pdf.drawString(text_x, y + 8 * mm, "sehaty.ma")
+    pdf.drawString(text_x, y + 8 * mm, _site_host())
 
 
 def _crop_marks(pdf: canvas.Canvas, x: float, y: float) -> None:
@@ -282,6 +295,8 @@ def draw_card_sheets(pdf: canvas.Canvas, doctor: DoctorCard, copies: int) -> Non
             _crop_marks(pdf, x, y)
             _draw_card(pdf, doctor, x, y)
         remaining -= on_this_sheet
+        if DRAFT:
+            _draft_watermark(pdf, width, height)
         pdf.showPage()
 
 
@@ -357,6 +372,47 @@ def load_from_db(slug: str | None) -> list[DoctorCard]:
     return list(seen.values())
 
 
+def _site_host() -> str:
+    """Bare host of SITE_URL, for print copy that should match the QR."""
+    return SITE_URL.split("//", 1)[-1].rstrip("/")
+
+
+def check_site_url(*, allow_draft: bool) -> str | None:
+    """Return an error message when the configured domain must not be printed.
+
+    Called before anything is drawn. A QR is only as permanent as the domain it
+    encodes, so this refuses an unset or provisional host unless the caller has
+    explicitly asked for a draft.
+    """
+    if not SITE_URL:
+        return (
+            "SEHATY_SITE_URL is not set.\n"
+            "A printed QR encodes its domain permanently, so there is no default.\n"
+            "  Preview:  SEHATY_SITE_URL=https://sehaty-landing.vercel.app ... --draft\n"
+            "  Final:    SEHATY_SITE_URL=https://<the real domain> ..."
+        )
+    if not allow_draft and any(host in SITE_URL for host in _NOT_FOR_PRINT):
+        return (
+            f"{SITE_URL} is a preview host, not a domain to print.\n"
+            "Re-run with --draft to produce a watermarked preview, or set\n"
+            "SEHATY_SITE_URL to the final domain once it is confirmed."
+        )
+    return None
+
+
+def _draft_watermark(pdf: canvas.Canvas, width: float, height: float) -> None:
+    """Stamp a preview so a draft can never be mistaken for a print master."""
+    pdf.saveState()
+    pdf.setFillColor(Color(0.85, 0.3, 0.3, alpha=0.28))
+    pdf.setFont("Helvetica-Bold", 46)
+    pdf.translate(width / 2, height / 2)
+    pdf.rotate(35)
+    pdf.drawCentredString(0, 0, "NE PAS IMPRIMER")
+    pdf.setFont("Helvetica", 13)
+    pdf.drawCentredString(0, -22, SITE_URL)
+    pdf.restoreState()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate plaques and QR cards.")
     parser.add_argument("--out", type=Path, default=Path("print"), help="Output directory")
@@ -365,7 +421,20 @@ def main() -> int:
     parser.add_argument(
         "--cards", type=int, default=100, help="Pocket cards per doctor (default 100)"
     )
+    parser.add_argument(
+        "--draft",
+        action="store_true",
+        help="Allow a preview host; every page is watermarked NE PAS IMPRIMER.",
+    )
     args = parser.parse_args()
+
+    problem = check_site_url(allow_draft=args.draft)
+    if problem:
+        print(problem, file=sys.stderr)
+        return 2
+
+    global DRAFT
+    DRAFT = args.draft
 
     if args.csv and not args.csv.is_file():
         print(f"no such file: {args.csv}", file=sys.stderr)
@@ -392,7 +461,9 @@ def main() -> int:
         draw_card_sheets(cards, doctor, args.cards)
         cards.save()
 
-    print(f"{len(doctors)} doctor(s)")
+    if args.draft:
+        print("DRAFT — watermarked, not for printing", file=sys.stderr)
+    print(f"{len(doctors)} doctor(s) @ {SITE_URL}")
     print(f"  plaques : {plaques_path}")
     print(f"  cards   : {args.out}/cards-<slug>.pdf ({args.cards} per doctor)")
     return 0
