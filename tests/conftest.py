@@ -43,6 +43,7 @@ from sehaty.db import (
     Message,
     MessageThread,
     Notification,
+    OutboundMessage,
     PatientCharge,
     PatientPayment,
     PatientProfile,
@@ -66,6 +67,7 @@ from sehaty.db import (
     Subscription,
     TreatmentFeedback,
     User,
+    WaitlistEntry,
 )
 from sehaty.db.base import SehatyBase
 from sqlalchemy import create_engine, text
@@ -136,6 +138,9 @@ _TABLES = [
     PatientProfile.__table__,
     MessageThread.__table__,
     Message.__table__,
+    # The day view's ask, and the queue a freed slot is offered on to.
+    OutboundMessage.__table__,
+    WaitlistEntry.__table__,
 ]
 
 

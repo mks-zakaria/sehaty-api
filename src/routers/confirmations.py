@@ -15,6 +15,7 @@ from sehaty.core.controllers.confirmations import (
 )
 from sehaty.core.controllers.waitlist import (
     OfferResult,
+    PatientWaitlistRow,
     WaitlistController,
     WaitlistRow,
 )
@@ -99,6 +100,17 @@ def practice_waitlist(
 ) -> list[WaitlistRow]:
     """The doctor's live waitlist, oldest first."""
     return WaitlistController.queue(doctor_id or user.id)
+
+
+@router.get("/waitlist/me", response_model=list[PatientWaitlistRow])
+def my_waitlist(user: User = Depends(_require_patient)) -> list[PatientWaitlistRow]:
+    """The caller's own waitlist entries, any live offer first.
+
+    Declared before ``/waitlist/{entry_id}`` matters not at all here (that route
+    is a DELETE) but the ordering is kept anyway so a future GET by id cannot
+    swallow ``/me``.
+    """
+    return WaitlistController.for_patient(user.id)
 
 
 @router.post("/waitlist", status_code=status.HTTP_201_CREATED)
