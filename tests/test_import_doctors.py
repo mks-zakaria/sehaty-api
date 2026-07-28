@@ -322,3 +322,26 @@ class TestSampleCsv:
         stats = _run(db, known, specialties)
         assert stats.created == len(known)
         assert not stats.errors
+
+
+class TestSeedPatientProfiles:
+    """The demo seed must give every patient a profile.
+
+    Patient names are read from `PatientProfile`; without one the secretary's
+    day view shows every row as "Patient", which defeats a screen whose whole
+    job is deciding who to phone.
+    """
+
+    def test_seed_creates_a_profile_per_patient(self) -> None:
+        import importlib.util
+
+        script = _SCRIPT.parent / "seed_demo.py"
+        spec = importlib.util.spec_from_file_location("seed_demo_check", script)
+        seed = importlib.util.module_from_spec(spec)
+        sys.modules["seed_demo_check"] = seed
+        spec.loader.exec_module(seed)
+
+        source = script.read_text()
+        assert "PatientProfile(" in source, "seed never creates a PatientProfile"
+        # Every entry in PATIENTS carries a display name that must reach the DB.
+        assert all(name for name, _sex, _birth in seed.PATIENTS)
