@@ -15,6 +15,7 @@ from core_config import settings
 from routers.admin import router as admin_router
 from routers.analytics import router as analytics_router
 from routers.appointments import router as appointments_router
+from routers.articles import router as articles_router
 from routers.assistants import router as assistants_router
 from routers.auth import router as auth_router
 from routers.availability import router as availability_router
@@ -90,6 +91,7 @@ app.include_router(availability_router)
 app.include_router(appointments_router)
 app.include_router(specialties_router)
 app.include_router(cities_router)
+app.include_router(articles_router)
 app.include_router(claims_router)
 app.include_router(confirmations_router)
 app.include_router(landing_events_router)
