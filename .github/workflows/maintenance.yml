@@ -18,8 +18,10 @@ name: maintenance
 #   - reset-pin       undoes one doctor's hand-placed pin back to a geocode,
 #                     for when it was dropped at the wrong address
 #
-# The doctor CSV is NOT committed — the generator is, so the droplet rebuilds
-# an identical file from source at run time.
+# Errahma imports from a committed generator; the city-wide list imports from a
+# dated snapshot under scripts/data/. Snapshots are tracked on purpose: the
+# droplet must not re-scrape third-party directories on every run, and a removal
+# request needs a specific dated file with per-row sources to answer from.
 #
 # Uses the same DO_HOST / DO_USER / DO_SSH_KEY secrets as deploy.yml.
 
@@ -37,6 +39,8 @@ on:
         options:
           - import-doctors-dry-run
           - import-doctors
+          - import-casablanca-dry-run
+          - import-casablanca
           - seed-plans
           - run-reminders
           - geocode-dry-run
@@ -83,6 +87,8 @@ jobs:
             test "$TASK" != "import-doctors-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api sh -c "python scripts/build_errahma_csv.py > /tmp/doctors.csv && python scripts/import_doctors.py /tmp/doctors.csv --dry-run"
             test "$TASK" != "geocode-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/geocode_doctors.py --dry-run
             test "$TASK" != "geocode" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/geocode_doctors.py
+            test "$TASK" != "import-casablanca-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/import_doctors.py scripts/data/casablanca-2026-07-28.csv --dry-run
+            test "$TASK" != "import-casablanca" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/import_doctors.py scripts/data/casablanca-2026-07-28.csv
             test "$TASK" != "reset-pin" || test -n "$DOCTOR_ID"
             test "$TASK" != "reset-pin" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/geocode_doctors.py --doctor "$DOCTOR_ID" --force
             test "$TASK" != "import-doctors" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api sh -c "python scripts/build_errahma_csv.py > /tmp/doctors.csv && python scripts/import_doctors.py /tmp/doctors.csv"

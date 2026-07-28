@@ -11,7 +11,12 @@ dist/
 # Local agent session files
 .claude/
 
-# Harvested prospect lists: real practitioners' contact details.
-# The generator is tracked; the output is not.
+# Working prospect files, including ones enriched with numbers collected on
+# visits. Not tracked.
 doctors-*.csv
 !scripts/doctors.sample.csv
+# Dated harvest snapshots ARE tracked, deliberately. The droplet imports from
+# them rather than re-scraping third-party directories on every run, and when a
+# doctor asks where their listing came from, the answer is a specific file with
+# a date and a per-row source rather than "a script, once, somehow".
+!scripts/data/*.csv
