@@ -15,6 +15,8 @@ name: maintenance
 #   - run-reminders   stamps each appointment once
 #   - geocode         only fills rows with no point, and never overwrites an
 #                     EXACT one with a coarser geocode
+#   - reset-pin       undoes one doctor's hand-placed pin back to a geocode,
+#                     for when it was dropped at the wrong address
 #
 # The doctor CSV is NOT committed — the generator is, so the droplet rebuilds
 # an identical file from source at run time.
@@ -24,6 +26,10 @@ name: maintenance
 on:
   workflow_dispatch:
     inputs:
+      doctor_id:
+        description: Doctor id — required by reset-pin, ignored otherwise
+        required: false
+        type: string
       task:
         description: What to run on the droplet
         required: true
@@ -35,6 +41,7 @@ on:
           - run-reminders
           - geocode-dry-run
           - geocode
+          - reset-pin
         default: import-doctors-dry-run
 
 concurrency:
@@ -57,11 +64,12 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           TASK: ${{ inputs.task }}
+          DOCTOR_ID: ${{ inputs.doctor_id }}
         with:
           host: ${{ secrets.DO_HOST }}
           username: ${{ secrets.DO_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
-          envs: TASK
+          envs: TASK,DOCTOR_ID
           script_stop: true
           command_timeout: 20m
           # appleboy runs this under the droplet's login shell; keep every line
@@ -75,4 +83,6 @@ jobs:
             test "$TASK" != "import-doctors-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api sh -c "python scripts/build_errahma_csv.py > /tmp/doctors.csv && python scripts/import_doctors.py /tmp/doctors.csv --dry-run"
             test "$TASK" != "geocode-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/geocode_doctors.py --dry-run
             test "$TASK" != "geocode" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/geocode_doctors.py
+            test "$TASK" != "reset-pin" || test -n "$DOCTOR_ID"
+            test "$TASK" != "reset-pin" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/geocode_doctors.py --doctor "$DOCTOR_ID" --force
             test "$TASK" != "import-doctors" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api sh -c "python scripts/build_errahma_csv.py > /tmp/doctors.csv && python scripts/import_doctors.py /tmp/doctors.csv"
