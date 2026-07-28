@@ -62,16 +62,21 @@ SPECIALTIES: dict[str, dict[str, str]] = {
     "orthopedics": {"tc": "chirurgiens-orthopedistes", "erdv": "chirurgiens-orthopedistes"},
 }
 
-# Telecontact serves complete sets for these; Casablanca itself is capped at 20.
-TC_VILLES = [
-    "casablanca",
-    "dar-bouazza",
-    "bouskoura",
-    "mohammedia",
-    "mediouna",
-    "tit-mellil",
-    "ain-harrouda",
-]
+# Telecontact serves complete sets for the small communes; a large city is
+# capped at twenty per rubrique whatever you ask for. Keyed by the region you
+# are working, because a Rabat run has no business fetching Bouskoura.
+REGIONS: dict[str, list[str]] = {
+    "casablanca": [
+        "casablanca",
+        "dar-bouazza",
+        "bouskoura",
+        "mohammedia",
+        "mediouna",
+        "tit-mellil",
+        "ain-harrouda",
+    ],
+    "rabat": ["rabat", "sale", "temara", "kenitra", "skhirat", "harhoura", "bouknadel"],
+}
 
 # Quartier names that appear inside written addresses, most specific first so
 # "Sidi Maârouf" is not swallowed by a bare "Sidi".
@@ -113,7 +118,45 @@ DISTRICTS = [
     "Californie",
     "Bouskoura",
     "Dar Bouazza",
+    # Rabat–Salé–Témara.
+    "Hay Riad",
+    "Agdal",
+    "Souissi",
+    "Yacoub El Mansour",
+    "Hassan",
+    "Akkari",
+    "Takaddoum",
+    "Youssoufia",
+    "Diour Jamaa",
+    "Océan",
+    "Ocean",
+    "Medina",
+    "Aviation",
+    "Orangeraie",
+    "Nahda",
+    "Hay Karima",
+    "Bettana",
+    "Tabriquet",
+    "Massira",
 ]
+
+
+# Slugs are ASCII; the name a patient reads is not. Deriving the display name by
+# title-casing the slug gives "Sale" and "Temara", which are a different word and
+# a misspelling respectively — and both would be printed on a public page.
+CITY_NAMES = {
+    "sale": "Salé",
+    "temara": "Témara",
+    "ain-harrouda": "Aïn Harrouda",
+    "dar-bouazza": "Dar Bouazza",
+    "tit-mellil": "Tit Mellil",
+    "skhirat": "Skhirat",
+    "bouknadel": "Bouknadel",
+}
+
+
+def city_name(ville: str) -> str:
+    return CITY_NAMES.get(ville, ville.replace("-", " ").title())
 
 
 @dataclass
@@ -234,9 +277,9 @@ def scrape_telecontact(specialty: str, ville: str) -> list[Listing]:
             Listing(
                 full_name=display_name(name),
                 specialty=specialty,
-                city="Casablanca" if ville == "casablanca" else ville.replace("-", " ").title(),
+                city=city_name(ville),
                 district=find_district(address)
-                or ("" if ville == "casablanca" else ville.replace("-", " ").title()),
+                or ("" if ville == "casablanca" else city_name(ville)),
                 address=address,
                 source="telecontact.ma",
                 source_name=name,
@@ -284,7 +327,7 @@ def scrape_erdv_page(specialty: str, city: str, page: int) -> list[Listing]:
             Listing(
                 full_name=display_name(name),
                 specialty=specialty,
-                city=city.title(),
+                city=city_name(city),
                 district=find_district(address),
                 address=address,
                 source="e-rdv.ma",
@@ -372,7 +415,17 @@ def dedupe(listings: list[Listing]) -> list[Listing]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", choices=("telecontact", "erdv", "both"), default="telecontact")
-    parser.add_argument("--city", default="casablanca")
+    parser.add_argument(
+        "--region",
+        default="casablanca",
+        choices=tuple(REGIONS),
+        help="which set of towns telecontact is walked for",
+    )
+    parser.add_argument(
+        "--cities",
+        default=None,
+        help="comma-separated cities for the paginated source; defaults to the region's towns",
+    )
     parser.add_argument("--out", default="doctors-scraped.csv")
     parser.add_argument(
         "--max-pages", type=int, default=100, help="page ceiling per specialty (erdv)"
@@ -380,6 +433,10 @@ def main() -> int:
     parser.add_argument("--only", default=None, help="one specialty slug, for testing")
     args = parser.parse_args()
 
+    tc_villes = REGIONS[args.region]
+    erdv_cities = (
+        [c.strip() for c in args.cities.split(",") if c.strip()] if args.cities else tc_villes
+    )
     specialties = [args.only] if args.only else list(SPECIALTIES)
     stats = Stats()
     listings: list[Listing] = []
@@ -387,10 +444,11 @@ def main() -> int:
     for specialty in specialties:
         found: list[Listing] = []
         if args.source in ("telecontact", "both"):
-            for ville in TC_VILLES:
+            for ville in tc_villes:
                 found += scrape_telecontact(specialty, ville)
         if args.source in ("erdv", "both"):
-            found += scrape_erdv(specialty, args.city, args.max_pages, stats)
+            for city in erdv_cities:
+                found += scrape_erdv(specialty, city, args.max_pages, stats)
         listings += found
         stats.by_specialty[specialty] = len(found)
         print(f"  {specialty:16} {len(found):5} listings")
