@@ -68,3 +68,10 @@ class DoctorProfilePatchIn(BaseModel):
     insurances: list[str] | None = None
     tiers_payant: bool | None = None
     specialty_slugs: list[str] | None = None
+
+
+class GrantAccessIn(BaseModel):
+    """Credentials handed to a doctor at the end of the onboarding visit."""
+
+    email: str
+    password: str

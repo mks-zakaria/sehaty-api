@@ -8,6 +8,7 @@ Body of each handler: parse -> ONE controller call -> return.
 """
 
 from fastapi import APIRouter, Depends
+from sehaty.core.controllers.claims import AccessGrant, grant_access
 from sehaty.core.controllers.doctors import DoctorController, DoctorView
 from sehaty.core.controllers.landing_config import (
     KNOWN_TEMPLATES,
@@ -19,6 +20,7 @@ from sehaty.db import User, UserRole
 from deps import require_roles
 from schemas.landing_config import (
     DoctorProfilePatchIn,
+    GrantAccessIn,
     LandingConfigIn,
     PersonalizedIn,
 )
@@ -76,6 +78,21 @@ def set_personalized(
     later resumes does not have to retype their services.
     """
     return LandingConfigController.set_personalized(doctor_id, enabled=body.enabled)
+
+
+@router.post("/{doctor_id}/access", response_model=AccessGrant)
+def grant_doctor_access(
+    doctor_id: int,
+    body: GrantAccessIn,
+    _admin: User = Depends(_require_admin),
+) -> AccessGrant:
+    """Give an imported doctor a login on their existing page.
+
+    The last step of an onboarding visit. Attaches credentials to the profile
+    that is already published, rather than creating a second one under a new
+    slug — the old slug may already be on a printed plaque.
+    """
+    return grant_access(doctor_id, email=body.email, password=body.password)
 
 
 @router.get("/{doctor_id}/profile", response_model=DoctorView)
