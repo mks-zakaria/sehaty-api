@@ -55,6 +55,13 @@ services:
       SEHATY_JWT_SECRET: ${SEHATY_JWT_SECRET:?set SEHATY_JWT_SECRET in .env}
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
       SEHATY_ENV: ${SEHATY_ENV:-prod}
+      # Chatbot. Listed here because compose passes only what it is told to:
+      # a key sitting in .env but absent from this block reaches nothing, and the
+      # symptom is a feature that stays silently unavailable with no error to
+      # follow. Empty is a supported state — triage falls back to a generalist
+      # and translation refuses out loud.
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      SEHATY_LLM_MODEL: ${SEHATY_LLM_MODEL:-}
     # Published to localhost only — the host's existing nginx reverse-proxies
     # ${SEHATY_API_HOST} to it and terminates TLS. Not reachable from outside the
     # droplet directly. (No Caddy here: on a shared box nginx already owns 80/443.)
