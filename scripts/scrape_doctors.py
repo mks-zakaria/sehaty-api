@@ -161,6 +161,14 @@ CITY_NAMES = {
     "tit-mellil": "Tit Mellil",
     "skhirat": "Skhirat",
     "bouknadel": "Bouknadel",
+    "fes": "Fès",
+    "meknes": "Meknès",
+    "tetouan": "Tétouan",
+    "ait-melloul": "Aït Melloul",
+    "laayoune": "Laâyoune",
+    "khemisset": "Khémisset",
+    "beni-mellal": "Béni Mellal",
+    "el-jadida": "El Jadida",
 }
 
 

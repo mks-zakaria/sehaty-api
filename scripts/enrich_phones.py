@@ -102,21 +102,47 @@ def normalise(raw: str) -> str | None:
     return digits
 
 
-def fetch(url: str) -> str | None:
-    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    try:
-        with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT) as response:
-            return response.read().decode("utf-8", "ignore")
-    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
-        return None
-    finally:
-        time.sleep(RATE_LIMIT_SECONDS)
+class Unreachable(Exception):
+    """The page could not be fetched, after retrying.
+
+    Distinct from "fetched, and there was no number on it" — and the distinction
+    is the whole point. Collapsing both into None meant a throttled run looked
+    exactly like a directory that publishes no phone numbers, and 587 doctors in
+    Tanger were written off on that basis.
+    """
+
+
+# Sustained crawling gets throttled long before it gets blocked. Backing off and
+# retrying recovers the run; treating the first refusal as an answer does not.
+RETRIES = 3
+BACKOFF_SECONDS = (5, 20, 60)
+
+
+def fetch(url: str) -> str:
+    """GET, retrying through a throttle. Raises Unreachable when it truly fails."""
+    last: Exception | None = None
+    for attempt in range(RETRIES):
+        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        try:
+            with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT) as response:
+                body = response.read().decode("utf-8", "ignore")
+            time.sleep(RATE_LIMIT_SECONDS)
+            return body
+        except urllib.error.HTTPError as exc:
+            last = exc
+            if exc.code == 404:
+                # A missing page is an answer, not a failure to get one.
+                time.sleep(RATE_LIMIT_SECONDS)
+                raise Unreachable("404") from exc
+        except (urllib.error.URLError, TimeoutError) as exc:
+            last = exc
+        # Back off further each time: the server is asking for room.
+        time.sleep(BACKOFF_SECONDS[min(attempt, len(BACKOFF_SECONDS) - 1)])
+    raise Unreachable(str(last))
 
 
 def phones_from_erdv(url: str) -> list[str]:
     html = fetch(url)
-    if not html:
-        return []
     match = _ERDV_TEL.search(html)
     number = normalise(unescape(match.group(1))) if match else None
     return [number] if number else []
@@ -124,8 +150,6 @@ def phones_from_erdv(url: str) -> list[str]:
 
 def phones_from_telecontact(url: str) -> list[str]:
     html = fetch(url)
-    if not html:
-        return []
     out: list[str] = []
     for raw in _TC_TEL.findall(html):
         number = normalise(unescape(raw))
@@ -163,11 +187,11 @@ def build_sitemap_index(cache_dir: Path, villes: set[str]) -> dict[str, str]:
     for number, url in enumerate(SITEMAPS, 1):
         path = cache_dir / f"sitemap_{number}.xml"
         if not path.exists() or path.stat().st_size < 1000:
-            body = fetch(url)
-            if not body:
+            try:
+                path.write_text(fetch(url), encoding="utf-8")
+            except Unreachable:
                 print(f"  ! sitemap {number} unavailable — skipped", file=sys.stderr)
                 continue
-            path.write_text(body, encoding="utf-8")
         for full, slug, _id, ville in _SITEMAP_URL.findall(
             path.read_text(encoding="utf-8", errors="ignore")
         ):
@@ -187,8 +211,6 @@ def phones_by_name(url: str, expect_specialty: str) -> tuple[list[str], str | No
     under the specialty we already believe, or nothing is taken from it.
     """
     html = fetch(url)
-    if not html:
-        return [], None
     found = {
         RUBRIQUE_SPECIALTY[slug] for slug in _RUBRIQUE.findall(html) if slug in RUBRIQUE_SPECIALTY
     }
@@ -237,27 +259,34 @@ def main() -> int:
 
     found = 0
     rejected = {"not-medical": 0, "other-specialty": 0, "no-match": 0}
+    # Counted separately from "no number on the page". Conflating them is what
+    # made a throttled Tanger run look like a source with nothing to give.
+    unreachable = 0
     for index, row in enumerate(todo, 1):
         source, url = row.get("source", ""), row.get("source_url", "")
 
-        if args.sitemap:
-            # Second pass: this row's own directory published no number, so look
-            # the person up on telecontact by name instead.
-            match = index_by_name.get(fold(row.get("source_name", "")))
-            if not match:
-                rejected["no-match"] += 1
-                numbers = []
+        try:
+            if args.sitemap:
+                # Second pass: this row's own directory published no number, so
+                # look the person up on telecontact by name instead.
+                match = index_by_name.get(fold(row.get("source_name", "")))
+                if not match:
+                    rejected["no-match"] += 1
+                    numbers = []
+                else:
+                    numbers, why = phones_by_name(match, row.get("specialty", ""))
+                    if why:
+                        rejected[why] += 1
+            elif not url:
+                continue
+            elif "e-rdv" in source:
+                numbers = phones_from_erdv(url)
+            elif "telecontact" in source:
+                numbers = phones_from_telecontact(url)
             else:
-                numbers, why = phones_by_name(match, row.get("specialty", ""))
-                if why:
-                    rejected[why] += 1
-        elif not url:
-            continue
-        elif "e-rdv" in source:
-            numbers = phones_from_erdv(url)
-        elif "telecontact" in source:
-            numbers = phones_from_telecontact(url)
-        else:
+                numbers = []
+        except Unreachable:
+            unreachable += 1
             numbers = []
 
         if numbers:
@@ -275,9 +304,18 @@ def main() -> int:
             # button as a promise. It is a yes/no question worth ten seconds on
             # the visit, so it stays empty until someone has asked.
         if index % 100 == 0:
-            print(f"  {index}/{len(todo)} — {found} numbers so far", flush=True)
+            note = f" ({unreachable} unreachable)" if unreachable else ""
+            print(f"  {index}/{len(todo)} — {found} numbers so far{note}", flush=True)
 
     print(f"found {found} of {len(todo)} ({found * 100 // max(len(todo), 1)}%)")
+    if unreachable:
+        # Loudly, because these are recoverable: re-running skips the rows that
+        # already have a number and retries only these.
+        print(
+            f"  ! {unreachable} pages unreachable — those doctors have no number "
+            f"*yet*. Re-run to retry only them.",
+            file=sys.stderr,
+        )
     if args.sitemap:
         # Say what was refused and why. A silent rejection is indistinguishable
         # from a source with no numbers, which is how the first two attempts at
