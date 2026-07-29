@@ -36,6 +36,19 @@ def assistant_status() -> dict[str, bool]:
     return {"available": AssistantController.available()}
 
 
+@router.get("/diagnose")
+def diagnose(_admin: User = Depends(_require_admin)) -> dict[str, object]:
+    """Ask the provider one trivial question and report what came back.
+
+    `status` only says whether a key is present. A key the provider rejects, or
+    a model it has retired, leaves status reporting available while every triage
+    silently falls back to a generalist — which is a state you cannot debug from
+    the outside. Admin-only: the detail carries the provider's own error text.
+    """
+    working, detail = AssistantController.diagnose()
+    return {"working": working, "detail": detail}
+
+
 @router.post("/triage", response_model=Triage)
 def triage(body: TriageIn) -> Triage:
     """Route a described problem to a specialty.
