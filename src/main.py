@@ -19,6 +19,7 @@ from routers.articles import router as articles_router
 from routers.assistants import router as assistants_router
 from routers.auth import router as auth_router
 from routers.availability import router as availability_router
+from routers.backup import router as backup_router
 from routers.billing import router as billing_router
 from routers.cabinets import router as cabinets_router
 from routers.chatbot import router as chatbot_router
@@ -103,6 +104,7 @@ app.include_router(cities_router)
 app.include_router(articles_router)
 app.include_router(onboarding_router)
 app.include_router(chatbot_router)
+app.include_router(backup_router)
 app.include_router(claims_router)
 app.include_router(confirmations_router)
 app.include_router(landing_events_router)

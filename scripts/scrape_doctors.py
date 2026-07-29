@@ -76,6 +76,15 @@ REGIONS: dict[str, list[str]] = {
         "ain-harrouda",
     ],
     "rabat": ["rabat", "sale", "temara", "kenitra", "skhirat", "harhoura", "bouknadel"],
+    # Grouped the way a patient travels rather than the way the map is drawn:
+    # Inezgane and Aït Melloul are Agadir to anyone looking for a doctor.
+    "marrakech": ["marrakech", "essaouira", "ouarzazate"],
+    "fes": ["fes", "meknes", "taza", "khemisset", "errachidia"],
+    "tanger": ["tanger", "tetouan", "larache"],
+    "agadir": ["agadir", "inezgane", "ait-melloul"],
+    "oujda": ["oujda", "nador"],
+    "centre": ["settat", "berrechid", "khouribga", "beni-mellal", "el-jadida", "safi"],
+    "sud": ["laayoune"],
 }
 
 # Quartier names that appear inside written addresses, most specific first so
