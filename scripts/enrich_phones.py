@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import http.client
 import re
 import sys
 import time
@@ -134,7 +135,11 @@ def fetch(url: str) -> str:
                 # A missing page is an answer, not a failure to get one.
                 time.sleep(RATE_LIMIT_SECONDS)
                 raise Unreachable("404") from exc
-        except (urllib.error.URLError, TimeoutError) as exc:
+        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as exc:
+            # OSError and HTTPException between them cover the ways a connection
+            # dies mid-read — RemoteDisconnected, reset peers, truncated bodies.
+            # urllib wraps most of those in URLError but not reliably, and one
+            # that escapes kills the whole run rather than one row.
             last = exc
         # Back off further each time: the server is asking for room.
         time.sleep(BACKOFF_SECONDS[min(attempt, len(BACKOFF_SECONDS) - 1)])
