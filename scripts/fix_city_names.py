@@ -33,9 +33,7 @@ CORRECTIONS = {
     "Ain Harrouda": "Aïn Harrouda",
 }
 # Anything the scraper itself now knows about, keyed by its stripped form.
-CORRECTIONS.update(
-    {name.encode("ascii", "ignore").decode(): name for name in CITY_NAMES.values()}
-)
+CORRECTIONS.update({name.encode("ascii", "ignore").decode(): name for name in CITY_NAMES.values()})
 
 
 def main(paths: list[str]) -> int:
