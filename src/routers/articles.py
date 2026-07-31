@@ -135,9 +135,7 @@ def submit_article(article_id: int, user: User = Depends(_require_doctor)) -> Ar
     return ArticleController.submit(article_id, user.id)
 
 
-@router.post(
-    "/doctors/me/articles/{article_id}/validate", response_model=ArticleView
-)
+@router.post("/doctors/me/articles/{article_id}/validate", response_model=ArticleView)
 def validate_article(
     article_id: int,
     body: ArticleValidateIn,
@@ -151,9 +149,7 @@ def validate_article(
     an endorsement points at a doctor page, and an unclaimed one belongs to
     somebody who never agreed to any of this.
     """
-    return ArticleController.validate(
-        article_id, user.id, verdict=body.verdict, note=body.note
-    )
+    return ArticleController.validate(article_id, user.id, verdict=body.verdict, note=body.note)
 
 
 @router.post("/admin/articles", response_model=ArticleView, status_code=201)

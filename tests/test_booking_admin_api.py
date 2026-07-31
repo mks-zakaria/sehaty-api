@@ -169,8 +169,6 @@ def test_the_switch_is_admin_only(client: TestClient, db: sessionmaker[Session])
 
     assert client.get(f"/api/v1/admin/doctors/{doctor_id}/booking").status_code == 401
     assert (
-        client.put(
-            f"/api/v1/admin/doctors/{doctor_id}/booking", json={"enabled": True}
-        ).status_code
+        client.put(f"/api/v1/admin/doctors/{doctor_id}/booking", json={"enabled": True}).status_code
         == 401
     )

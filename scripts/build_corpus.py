@@ -57,9 +57,7 @@ _HEADING = re.compile(r"^[A-Z][A-Z \-'’&,()/]{3,60}$")
 
 
 def page_count(pdf: Path) -> int:
-    out = subprocess.run(
-        ["pdfinfo", str(pdf)], capture_output=True, text=True, check=True
-    ).stdout
+    out = subprocess.run(["pdfinfo", str(pdf)], capture_output=True, text=True, check=True).stdout
     match = re.search(r"^Pages:\s+(\d+)", out, re.M)
     if not match:
         raise SystemExit(f"cannot read page count from {pdf}")
@@ -102,11 +100,7 @@ def read_page(
     # topic and makes retrieval useless. The section title under it
     # ("CELLULAR BASIS OF THE ADAPTIVE IMMUNE RESPONSE") is both longer and the
     # thing a chunk is actually about.
-    candidates = [
-        line.strip()
-        for line in full.splitlines()
-        if _HEADING.fullmatch(line.strip())
-    ]
+    candidates = [line.strip() for line in full.splitlines() if _HEADING.fullmatch(line.strip())]
     heading = max(candidates, key=len).title() if candidates else None
 
     if columns < 2:
@@ -143,9 +137,7 @@ def clean(text: str) -> str:
     silent corruption in a corpus is far worse than a visible typo — the typo
     survives into the draft where a doctor sees it, the corruption does not.
     """
-    text = "\n".join(
-        line for line in text.splitlines() if not _BOILERPLATE.search(line)
-    )
+    text = "\n".join(line for line in text.splitlines() if not _BOILERPLATE.search(line))
     text = text.replace("\xad", "")
     # Words broken across a line end: "an­\nteriorly" -> "anteriorly".
     text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)

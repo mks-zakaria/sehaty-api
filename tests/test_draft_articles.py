@@ -41,8 +41,10 @@ def _chunk(text: str, heading: str | None = None, page: int = 10) -> Chunk:
 class TestCoverage:
     def test_a_topic_the_books_cover_is_written(self) -> None:
         chunks = [
-            _chunk("Osteoarthritis is a degenerative disease of articular cartilage. " * 4,
-                   heading="Osteoarthritis"),
+            _chunk(
+                "Osteoarthritis is a degenerative disease of articular cartilage. " * 4,
+                heading="Osteoarthritis",
+            ),
             _chunk("In osteoarthritis the joint space narrows and osteophytes form. " * 4),
         ]
 
@@ -91,7 +93,7 @@ class TestCoverage:
 class TestSourceSelection:
     @pytest.mark.parametrize("heading", ["Index", "Contents", "References", "GLOSSARY"])
     def test_the_books_own_navigation_is_never_a_source(self, heading: str) -> None:
-        """"Index, p. 667" was being cited as the source on anaemia.
+        """ "Index, p. 667" was being cited as the source on anaemia.
 
         An index is term-dense by construction, so it outranks real prose for
         almost any query while containing no medicine at all.

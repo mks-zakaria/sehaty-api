@@ -156,9 +156,7 @@ def test_the_platform_writes_and_a_doctor_signs(
     is worthless alone.
     """
     admin = _admin(db)
-    doctor = _doctor(
-        db, email="signer@c.ma", slug="dr-signer-casa", claim=ClaimStatus.CLAIMED
-    )
+    doctor = _doctor(db, email="signer@c.ma", slug="dr-signer-casa", claim=ClaimStatus.CLAIMED)
 
     drafted = client.post(
         "/api/v1/admin/articles",
@@ -202,9 +200,7 @@ def test_only_an_admin_may_publish_under_the_platforms_name(
     client: TestClient, db: sessionmaker[Session]
 ) -> None:
     """An authorless article is the one thing a doctor must not be able to make."""
-    doctor = _doctor(
-        db, email="notadmin@c.ma", slug="dr-notadmin", claim=ClaimStatus.CLAIMED
-    )
+    doctor = _doctor(db, email="notadmin@c.ma", slug="dr-notadmin", claim=ClaimStatus.CLAIMED)
     payload = {
         "title": "C'est quoi une hernie discale ?",
         "body": BODY,
@@ -219,9 +215,7 @@ def test_only_an_admin_may_publish_under_the_platforms_name(
     )
 
 
-def test_an_unclaimed_doctor_cannot_sign(
-    client: TestClient, db: sessionmaker[Session]
-) -> None:
+def test_an_unclaimed_doctor_cannot_sign(client: TestClient, db: sessionmaker[Session]) -> None:
     """Same funnel as writing: signing requires owning your page."""
     admin = _admin(db)
     cold = _doctor(db, email="cold-sign@c.ma", slug="dr-cold-sign", claim=ClaimStatus.UNCLAIMED)
@@ -265,9 +259,7 @@ def _publish_platform_article(client: TestClient, admin: str) -> dict:
     return article
 
 
-def test_a_reader_votes_without_an_account(
-    client: TestClient, db: sessionmaker[Session]
-) -> None:
+def test_a_reader_votes_without_an_account(client: TestClient, db: sessionmaker[Session]) -> None:
     """Requiring a login to say "this did not help" would collect the opinion of
     the people who already trust us and miss everyone we have to convince."""
     article = _publish_platform_article(client, _admin(db))
@@ -300,9 +292,7 @@ def test_readers_behind_different_addresses_are_counted_separately(
     url = f"/api/v1/articles/{article['slug']}/vote"
 
     client.post(url, json={"helpful": True}, headers={"x-forwarded-for": "41.0.0.1"})
-    second = client.post(
-        url, json={"helpful": True}, headers={"x-forwarded-for": "41.0.0.2"}
-    )
+    second = client.post(url, json={"helpful": True}, headers={"x-forwarded-for": "41.0.0.2"})
 
     assert second.json()["total_votes"] == 2
 
@@ -320,9 +310,7 @@ def test_a_draft_takes_no_votes(client: TestClient, db: sessionmaker[Session]) -
         },
     )
 
-    refused = client.post(
-        f"/api/v1/articles/{drafted.json()['slug']}/vote", json={"helpful": True}
-    )
+    refused = client.post(f"/api/v1/articles/{drafted.json()['slug']}/vote", json={"helpful": True})
 
     assert refused.status_code == 404, refused.text
 

@@ -192,8 +192,14 @@ def is_source(chunk: Chunk) -> bool:
     """
     heading = chunk.folded_heading.strip()
     if heading in {
-        "index", "contents", "references", "bibliography", "glossary",
-        "sommaire", "table des matieres", "bibliographie",
+        "index",
+        "contents",
+        "references",
+        "bibliography",
+        "glossary",
+        "sommaire",
+        "table des matieres",
+        "bibliographie",
     }:
         return False
     # A page that is mostly page numbers is an index whatever its heading says.
@@ -249,8 +255,7 @@ def covered(chunks: list[Chunk], terms: list[str]) -> tuple[bool, str]:
         for c in chunks
         if is_source(c)
         and any(
-            _pattern(p).search(c.folded) or _pattern(p).search(c.folded_heading)
-            for p in primaries
+            _pattern(p).search(c.folded) or _pattern(p).search(c.folded_heading) for p in primaries
         )
     ]
     if len(named) < MIN_CHUNKS:
@@ -369,12 +374,8 @@ LANGUAGE_NAMES = {"fr": "French", "ar": "Modern Standard Arabic", "ary": "Morocc
 
 
 def build_prompt(question: str, locale: str, passages: list[Chunk]) -> str:
-    context = "\n\n---\n\n".join(
-        f"[{c.work} — {c.locator}]\n{c.text}" for c in passages
-    )
-    return PROMPT.format(
-        question=question, language=LANGUAGE_NAMES[locale], context=context
-    )
+    context = "\n\n---\n\n".join(f"[{c.work} — {c.locator}]\n{c.text}" for c in passages)
+    return PROMPT.format(question=question, language=LANGUAGE_NAMES[locale], context=context)
 
 
 def parse_draft(raw: str) -> dict:
@@ -434,9 +435,7 @@ def main() -> int:
             continue
 
         best = score(passages[0], topic["terms"])
-        print(
-            f"  ✓ {label}  ({len(passages)} passages, best {best:.0f})", file=sys.stderr
-        )
+        print(f"  ✓ {label}  ({len(passages)} passages, best {best:.0f})", file=sys.stderr)
         if args.dry_run:
             for passage in passages:
                 print(f"      · {passage.work} — {passage.locator}", file=sys.stderr)
