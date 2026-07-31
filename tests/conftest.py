@@ -24,6 +24,9 @@ from sehaty.db import (
     AdminConfig,
     Appointment,
     Article,
+    ArticleEvent,
+    ArticleValidation,
+    ArticleVote,
     AuditLog,
     Availability,
     AvailabilityException,
@@ -35,6 +38,7 @@ from sehaty.db import (
     Dispense,
     DispenseItem,
     DoctorAssistant,
+    DoctorBookingSwitch,
     DoctorLanding,
     DoctorProfile,
     DoctorSpecialty,
@@ -115,6 +119,8 @@ _TABLES = [
     DoctorLanding.__table__,
     Plan.__table__,
     Subscription.__table__,
+    # Entitlement consults the hand switch on every resolve.
+    DoctorBookingSwitch.__table__,
     Invoice.__table__,
     Payment.__table__,
     CreditLedger.__table__,
@@ -144,6 +150,10 @@ _TABLES = [
     WaitlistEntry.__table__,
     # Doctor-written answers, and the review gate in front of them.
     Article.__table__,
+    # Every article read carries its signatories.
+    ArticleEvent.__table__,
+    ArticleValidation.__table__,
+    ArticleVote.__table__,
 ]
 
 

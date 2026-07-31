@@ -1,8 +1,9 @@
 """Admin control of a doctor's public landing page.
 
-The template is chosen by staff during onboarding and changed from the console
-afterwards — a doctor never picks their own. Content (acts, equipment, FAQ) is
-captured in the same visit.
+The template (which sections, in what order) is inherited from the specialty; the
+layout (what the page looks like) is picked per doctor. Both are staff decisions
+taken during onboarding and changed from the console afterwards — a doctor never
+picks their own. Content (acts, equipment, FAQ) is captured in the same visit.
 
 Body of each handler: parse -> ONE controller call -> return.
 """
@@ -13,6 +14,7 @@ from sehaty.core.controllers.claims import AccessGrant, grant_access
 from sehaty.core.controllers.doctors import DoctorController, DoctorView
 from sehaty.core.controllers.landing_config import (
     KNOWN_TEMPLATES,
+    LAYOUTS,
     LandingConfig,
     LandingConfigController,
 )
@@ -37,6 +39,16 @@ def list_templates(_admin: User = Depends(_require_admin)) -> list[str]:
     return sorted(KNOWN_TEMPLATES)
 
 
+@router.get("/layouts", response_model=list[str])
+def list_layouts(_admin: User = Depends(_require_admin)) -> list[str]:
+    """The page designs a doctor can be put on, in the order to offer them.
+
+    Insertion order, not sorted: the console shows these as a row of choices and
+    "classic" has to lead — it is what an unset page already looks like.
+    """
+    return list(LAYOUTS)
+
+
 @router.get("/{doctor_id}/landing", response_model=LandingConfig)
 def get_landing(doctor_id: int, _admin: User = Depends(_require_admin)) -> LandingConfig:
     """The doctor's resolved configuration.
@@ -54,10 +66,11 @@ def update_landing(
     body: LandingConfigIn,
     _admin: User = Depends(_require_admin),
 ) -> LandingConfig:
-    """Set the template and content. Omitted fields are left untouched."""
+    """Set the template, the design and the content. Omitted fields are untouched."""
     return LandingConfigController.upsert(
         doctor_id,
         template=body.template,
+        layout=body.layout,
         accent=body.accent,
         section_order=body.section_order,
         services=[s.model_dump() for s in body.services] if body.services is not None else None,

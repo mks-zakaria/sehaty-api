@@ -33,7 +33,7 @@ def _admin(db: sessionmaker[Session]) -> str:
         return security.create_access_token(int(user.id), UserRole.ADMIN)
 
 
-def _seed(db: sessionmaker[Session], name: str, slug: str) -> int:
+def _seed(db: sessionmaker[Session], name: str, slug: str, city: str = "Casablanca") -> int:
     with db() as session:
         specialty = session.query(Specialty).filter_by(slug="dentistry").first()
         if specialty is None:
@@ -53,7 +53,7 @@ def _seed(db: sessionmaker[Session], name: str, slug: str) -> int:
                 full_name=name,
                 slug=slug,
                 license_no=f"LIC-{user.id}",
-                city="Casablanca",
+                city=city,
                 claim_status=ClaimStatus.UNCLAIMED,
             )
         )
@@ -72,6 +72,44 @@ def test_search_finds_a_doctor_however_the_operator_types_it(
         found = client.get(f"/api/v1/admin/onboarding/search?q={query}", headers=_auth(token))
         assert found.status_code == 200, found.text
         assert [d["full_name"] for d in found.json()] == ["Dr Amina Bennani"], query
+
+
+def test_the_city_filter_tells_two_of_the_same_name_apart(
+    client: TestClient, db: sessionmaker[Session]
+) -> None:
+    """Both Bennanis come back unfiltered; the city picks the one at this door."""
+    token = _admin(db)
+    _seed(db, "Dr Amina Bennani", "dr-amina-bennani-casablanca")
+    _seed(db, "Dr Amina Bennani", "dr-amina-bennani-rabat", city="Rabat")
+
+    everywhere = client.get("/api/v1/admin/onboarding/search?q=bennani", headers=_auth(token))
+    assert len(everywhere.json()) == 2, everywhere.text
+
+    in_rabat = client.get(
+        "/api/v1/admin/onboarding/search?q=bennani&city=rabat", headers=_auth(token)
+    )
+    assert in_rabat.status_code == 200, in_rabat.text
+    assert [d["city"] for d in in_rabat.json()] == ["Rabat"]
+
+
+def test_the_offered_cities_all_have_a_doctor_behind_them(
+    client: TestClient, db: sessionmaker[Session]
+) -> None:
+    """A dropdown entry that always returns nothing reads as a broken search."""
+    token = _admin(db)
+    _seed(db, "Dr Amina Bennani", "dr-amina-bennani-casablanca")
+    _seed(db, "Dr Karim Alami", "dr-karim-alami-rabat", city="Rabat")
+
+    offered = client.get("/api/v1/admin/onboarding/cities", headers=_auth(token))
+
+    assert offered.status_code == 200, offered.text
+    slugs = [c["slug"] for c in offered.json()]
+    assert slugs == ["casablanca", "rabat"]
+    for city in offered.json():
+        found = client.get(
+            f"/api/v1/admin/onboarding/search?q=dr&city={city['slug']}", headers=_auth(token)
+        )
+        assert len(found.json()) == city["doctor_count"], city
 
 
 def test_creating_a_duplicate_is_refused(client: TestClient, db: sessionmaker[Session]) -> None:
@@ -116,3 +154,6 @@ def test_a_new_doctor_is_listed_never_verified(
 
 def test_onboarding_is_admin_only(client: TestClient, db: sessionmaker[Session]) -> None:
     assert client.get("/api/v1/admin/onboarding/search?q=ab").status_code == 401
+    # The city list is a read of the whole directory, including pages a patient
+    # never sees, so it sits behind the same door as the search.
+    assert client.get("/api/v1/admin/onboarding/cities").status_code == 401

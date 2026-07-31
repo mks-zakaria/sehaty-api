@@ -1,0 +1,864 @@
+{
+  "_comment": [
+    "The editorial plan, ordered by what Moroccans actually suffer from and",
+    "actually search for — not by what our source books happen to contain.",
+    "",
+    "Each topic carries the evidence for its place in the list ('why'), because",
+    "an editorial plan nobody can argue with is one nobody can correct. Figures",
+    "are Morocco-specific where they exist and regional otherwise.",
+    "",
+    "'question' is the article's question in French, 'question_ar' the way it is",
+    "typed into Google in Arabic. Two different strings on purpose, and the",
+    "Arabic one is usually the higher-volume of the pair here.",
+    "",
+    "'terms' are English, in the vocabulary a medical textbook indexes. Nobody",
+    "searches 'androgenetic alopecia' and no pathology text indexes 'my hair is",
+    "falling out'; retrieval needs the second vocabulary, the reader needs the",
+    "first. The FIRST term is the condition's own name and is a hard requirement",
+    "in the coverage gate.",
+    "",
+    "Topics whose sources we do not hold are kept here and reported as uncovered",
+    "rather than deleted — the gap is the brief for the next source book, and",
+    "deleting it would hide the most-searched things we cannot yet answer."
+  ],
+  "topics": [
+    {
+      "specialty": "generalist",
+      "question": "Le surpoids : à partir de quand est-ce un problème de santé ?",
+      "question_ar": "متى تصبح السمنة خطرا على الصحة؟",
+      "terms": [
+        "obesity",
+        "adipose",
+        "body mass",
+        "overweight"
+      ],
+      "why": "Morocco STEPS 2017: 53% of adults overweight, 20% obese; 61.3% of women of reproductive age. The largest modifiable burden in the country."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Le diabète de type 2 : comment savoir si on l'a ?",
+      "question_ar": "كيف أعرف أنني مصاب بالسكري؟",
+      "terms": [
+        "diabetes",
+        "insulin",
+        "glucose",
+        "diabetic"
+      ],
+      "why": "13.2% of Moroccan adults have type 2 diabetes and 5.9% do not know it — nearly half undiagnosed. An article whose job is to send people for a test."
+    },
+    {
+      "specialty": "generalist",
+      "question": "J'ai des brûlures d'estomac depuis des mois : est-ce la bactérie Helicobacter pylori ?",
+      "question_ar": "ما هي أعراض جرثومة المعدة وكيف أعرف أنني مصاب بها؟",
+      "terms": [
+        "helicobacter",
+        "gastritis",
+        "peptic ulcer",
+        "duodenal ulcer"
+      ],
+      "why": "H. pylori prevalence in Morocco exceeds 70%, with 92.6% seropositivity reported in asymptomatic Moroccans. 'جرثومة المعدة' is one of the highest-traffic condition pages on Altibbi."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Je tousse depuis plus de trois semaines avec des sueurs la nuit : est-ce la tuberculose ?",
+      "question_ar": "كحة مستمرة أكثر من ثلاثة أسابيع مع تعرق ليلي، هل هي مرض السل؟",
+      "terms": [
+        "tuberculosis",
+        "mycobacterium",
+        "granuloma",
+        "caseation"
+      ],
+      "why": "Morocco remains TB-endemic: WHO 2025 estimates 98 cases per 100,000, 33,000 notified, ~4,000 undiagnosed. 53% of new 2025 cases were extrapulmonary, so patients present with non-obvious symptoms they search before consulting."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Douleur violente d'un côté du dos qui irradie : est-ce un calcul rénal ?",
+      "question_ar": "ألم شديد في الجنب ينزل إلى أسفل البطن، هل هو حصى الكلى؟",
+      "terms": [
+        "calculi",
+        "renal",
+        "urinary tract",
+        "obstruction"
+      ],
+      "why": "Morocco sits in the North African stone belt. Moroccan data show urinary stone disease five times more frequent in outdoor workers (5.2% vs 0.85%) — a heat and dehydration pattern that fits the climate."
+    },
+    {
+      "specialty": "generalist",
+      "question": "La fatigue permanente : et si c'était une anémie ?",
+      "question_ar": "التعب المستمر ونقص الحديد عند النساء",
+      "terms": [
+        "anaemia",
+        "iron deficiency",
+        "haemoglobin",
+        "red cells"
+      ],
+      "why": "34.4% of Moroccan women of reproductive age are anaemic, 30.3% iron-deficient. Presents as 'I am always tired', which is a search, not a consultation."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Le manque de vitamine D : très fréquent et souvent ignoré",
+      "question_ar": "نقص فيتامين د: الأعراض والعلاج",
+      "terms": [
+        "vitamin d",
+        "rickets",
+        "osteomalacia",
+        "calcium"
+      ],
+      "why": "74.4% of Moroccan women are vitamin D deficient (24% severely). Enormous burden, almost no good Arabic content, cheap to act on."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Le jeûne du Ramadan quand on est diabétique ou sous traitement",
+      "question_ar": "الصيام ومرض السكري: ماذا يجب أن أعرف؟",
+      "terms": [
+        "diabetes",
+        "hypoglycaemia",
+        "insulin",
+        "ketoacidosis"
+      ],
+      "why": "A whole country changes its eating and medication schedule for a month. Guidelines call for a pre-Ramadan assessment 1-2 months ahead — a search that happens on a predictable date every year."
+    },
+    {
+      "specialty": "cardiology",
+      "question": "L'hypertension : pourquoi on l'appelle le tueur silencieux ?",
+      "question_ar": "لماذا يسمى ارتفاع ضغط الدم بالقاتل الصامت؟",
+      "terms": [
+        "hypertension",
+        "blood pressure",
+        "hypertensive",
+        "arteries"
+      ],
+      "why": "19.5% of Moroccan adults (STEPS 2017). Asymptomatic until it is not — the shape of a question people search rather than ask a doctor."
+    },
+    {
+      "specialty": "cardiology",
+      "question": "Quels sont les signes d'une crise cardiaque et quand appeler les urgences ?",
+      "question_ar": "ما هي أعراض النوبة القلبية ومتى يجب الذهاب إلى المستعجلات؟",
+      "terms": [
+        "myocardial infarction",
+        "coronary",
+        "ischaemia",
+        "atheroma"
+      ],
+      "why": "Cardiovascular disease causes ~38% of deaths in Morocco, coronary ischaemia leading at 31.0% of them. A 2025 Moroccan series found 10.2% of STEMI in under-49s (mean age 41, 64.5% smokers) — exactly the cohort that Googles its symptoms."
+    },
+    {
+      "specialty": "cardiology",
+      "question": "Je suis essoufflé au moindre effort et mes jambes gonflent le soir : est-ce mon cœur ?",
+      "question_ar": "ضيق التنفس وتورم القدمين والساقين هل هو من قصور القلب؟",
+      "terms": [
+        "cardiac failure",
+        "heart failure",
+        "oedema",
+        "ventricular"
+      ],
+      "why": "The CASABLANCA HF study (1344 patients, 2024) reports 60% survival at 6 years and 34% at 10 — a marker of very late diagnosis, so the useful angle is the warning signs."
+    },
+    {
+      "specialty": "cardiology",
+      "question": "Mon cœur s'emballe et bat de façon irrégulière : est-ce grave ?",
+      "question_ar": "خفقان القلب وعدم انتظام ضربات القلب متى يكون خطيرًا؟",
+      "terms": [
+        "atrial fibrillation",
+        "arrhythmia",
+        "thrombus",
+        "embolism"
+      ],
+      "why": "'خفقان القلب' is one of the most contested Arabic cardiology keywords. GBD 1990-2019 places Morocco among the three MENA countries with the steepest rise in atrial-fibrillation mortality."
+    },
+    {
+      "specialty": "cardiology",
+      "question": "Une angine mal soignée chez l'enfant peut-elle abîmer le cœur ?",
+      "question_ar": "هل التهاب اللوزتين غير المعالج عند الأطفال يسبب مرض القلب الروماتيزمي؟",
+      "terms": [
+        "rheumatic",
+        "mitral stenosis",
+        "streptococcal",
+        "valvular"
+      ],
+      "why": "The Moroccan Journal of Cardiology calls rheumatic valve disease 'a real public health problem' in Morocco; a 408-patient Casablanca cohort shows predominantly mitral involvement, 78% women. Almost absent from Arabic generalist sites."
+    },
+    {
+      "specialty": "cardiology",
+      "question": "Le cholestérol : faut-il vraiment s'en inquiéter ?",
+      "question_ar": "الكوليسترول المرتفع: ما الخطر الحقيقي؟",
+      "terms": [
+        "atheroma",
+        "atherosclerosis",
+        "lipid",
+        "plaque"
+      ],
+      "why": "The mechanism behind the country's leading cause of death, and the subject of more folk advice than any other."
+    },
+    {
+      "specialty": "dermatology",
+      "question": "La chute de cheveux : quand faut-il s'inquiéter ?",
+      "question_ar": "تساقط الشعر: متى يكون طبيعيا ومتى يجب القلق؟",
+      "terms": [
+        "alopecia|alopecie|calvitie",
+        "hair follicle",
+        "hair loss",
+        "scalp"
+      ],
+      "why": "40-50% of Middle Eastern men by age 50; alopecia areata 0.2-13.8% regionally, peaking in young adults. Among the highest-volume Arabic health queries and dominated by clinics selling transplants."
+    },
+    {
+      "specialty": "dermatology",
+      "question": "Comment se débarrasser de l'acné et éviter les cicatrices ?",
+      "question_ar": "كيف أتخلص من حب الشباب في الوجه وأتجنب الندبات؟",
+      "terms": [
+        "acne",
+        "sebaceous",
+        "comedone",
+        "pilosebaceous"
+      ],
+      "why": "A Moroccan study reports acne in ~80% of adolescents and young adults, with scarring in 84.4% of patients. A Northern Morocco survey found 50.9% of community pharmacists recommend isotretinoin without medical advice — unmediated demand answered by sellers."
+    },
+    {
+      "specialty": "dermatology",
+      "question": "Pourquoi ai-je des taches brunes sur le visage et comment les traiter sans abîmer ma peau ?",
+      "question_ar": "ما سبب الكلف والبقع البنية في الوجه وكيف أتخلص منها بأمان؟",
+      "terms": [
+        "melasma|melasma|chloasma",
+        "pigmentation",
+        "melanin",
+        "melanocyte"
+      ],
+      "why": "Melasma concentrates in Fitzpatrick III-V skin under high sun exposure — the Moroccan female population. The Arabic SERP for الكلف is saturated with clinics selling peels and unregulated hydroquinone/corticosteroid creams (38% of analysed African-market lightening products contained corticosteroids)."
+    },
+    {
+      "specialty": "dermatology",
+      "question": "Mon enfant a de l'eczéma qui le gratte sans arrêt : qu'est-ce qui déclenche les poussées ?",
+      "question_ar": "طفلي عنده أكزيما وحكة شديدة، ما سببها وكيف أعالجها في البيت؟",
+      "terms": [
+        "eczema|dermatite atopique",
+        "dermatitis",
+        "atopic",
+        "epidermis"
+      ],
+      "why": "ISAAC Phase III in four Moroccan centres found 13.3-20.2% of children reporting eczema symptoms, highest in Casablanca, with lifetime prevalence in 13-14 year olds nearly quadrupling over seven years."
+    },
+    {
+      "specialty": "dermatology",
+      "question": "Le vitiligo est-il contagieux, et existe-t-il un traitement ?",
+      "question_ar": "هل البهاق معدي وهل يوجد له علاج نهائي؟",
+      "terms": [
+        "vitiligo",
+        "depigmentation",
+        "melanocyte",
+        "autoimmune"
+      ],
+      "why": "Pooled vitiligo prevalence in Arab countries is 2%, roughly double the global rate, with markedly worse quality-of-life scores in the Middle East than Europe and widespread public belief that it is infectious. Demand driven by stigma and misinformation."
+    },
+    {
+      "specialty": "psychiatry",
+      "question": "L'anxiété : à quel moment ce n'est plus du stress normal ?",
+      "question_ar": "الفرق بين التوتر العادي واضطراب القلق",
+      "terms": [
+        "anxiety|anxiete|trouble anxieux",
+        "neurosis",
+        "psychiatric",
+        "panic"
+      ],
+      "why": "The Moroccan national mental health survey (n=5,498) found at least one anxiety disorder in 37% of the population; a Casablanca study found 25.5% with a current anxiety disorder."
+    },
+    {
+      "specialty": "psychiatry",
+      "question": "Comment savoir si je fais une vraie dépression ou si je suis seulement fatigué ?",
+      "question_ar": "كيف أعرف أنني مصاب بالاكتئاب وليس مجرد تعب وإرهاق؟",
+      "terms": [
+        "depression caracterisee|episode depressif|trouble depressif",
+        "depressive",
+        "psychiatric",
+        "mood"
+      ],
+      "why": "The Moroccan national survey found current major depressive disorder in 26.5% of those aged 15+. With roughly one psychiatrist per 100,000 inhabitants, almost none of these consult, and they present with somatic complaints."
+    },
+    {
+      "specialty": "psychiatry",
+      "question": "Les antidépresseurs rendent-ils dépendant, et combien de temps faut-il les prendre ?",
+      "question_ar": "هل مضادات الاكتئاب تسبب الإدمان ومتى يمكن التوقف عن تناولها؟",
+      "terms": [
+        "antidepresseur|antidepresseurs",
+        "dependence",
+        "withdrawal",
+        "psychotropic"
+      ],
+      "why": "The Arabic SERP for this question is entirely occupied by commercial Egyptian and Saudi detox clinics with no neutral medical source — a documented editorial gap on a high-volume question, and the leading cause of premature treatment discontinuation."
+    },
+    {
+      "specialty": "psychiatry",
+      "question": "Mes pensées obsédantes et mes lavages répétés : waswas ou TOC qui se soigne ?",
+      "question_ar": "هل الوسواس القهري مرض نفسي أم وسواس شيطاني؟ وكيف أفرق بينهما؟",
+      "terms": [
+        "obsessionnel|obsessionnelle|toc",
+        "obsession",
+        "compulsion",
+        "neurosis"
+      ],
+      "why": "In a Moroccan study of religiously-themed OCD, 47% of patients had doubt about the validity of their prayer as the main obsession. In Arabic 'الوسواس' names both the disorder and diabolical temptation, which sends patients to the fqih rather than the psychiatrist."
+    },
+    {
+      "specialty": "psychiatry",
+      "question": "Mon proche entend des voix et parle seul : sorcellerie ou schizophrénie ?",
+      "question_ar": "ابني يسمع أصواتاً ويتكلم مع نفسه، هل هو سحر ومس أم مرض الفصام؟",
+      "terms": [
+        "schizophrenia|schizophrenie",
+        "psychosis",
+        "hallucination",
+        "delusion"
+      ],
+      "why": "Kadri et al. (Can J Psychiatry 2004): of 100 Moroccan families of schizophrenic patients, 25% attributed the illness to sorcery and 76% had no knowledge of the disorder, leading them to the fqih and delaying diagnosis; 86.7% reported lives made difficult by stigma."
+    },
+    {
+      "specialty": "gynecology",
+      "question": "Pertes blanches avec démangeaisons et odeur : est-ce une infection vaginale ?",
+      "question_ar": "إفرازات مهبلية بيضاء مع حكة ورائحة، هل هي التهاب مهبلي وما علاجه؟",
+      "terms": [
+        "vaginitis",
+        "candidiasis",
+        "vulvovaginal",
+        "cervicitis"
+      ],
+      "why": "In a Moroccan study of women of childbearing age, 38.6% presented an STI-related syndrome, 81.8% of which was vaginal discharge. Morocco has no systematic STI diagnosis outside HIV/syphilis, so most women self-treat at the pharmacy."
+    },
+    {
+      "specialty": "gynecology",
+      "question": "Ovaires polykystiques : quels signes, et est-ce que ça empêche de tomber enceinte ?",
+      "question_ar": "تكيس المبايض: ما هي أعراضه وهل يمنع الحمل؟",
+      "terms": [
+        "polycystic ovary",
+        "ovary",
+        "hirsutism",
+        "anovulation"
+      ],
+      "why": "GBD puts MENA age-standardised PCOS prevalence at 2,079.7 per 100,000 and flags Morocco as carrying more than its socio-demographic index predicts. In an Oujda series PCOS caused 69.4% of hirsutism referrals, mean age 25."
+    },
+    {
+      "specialty": "gynecology",
+      "question": "Un an d'essais sans grossesse : quand consulter et quels examens, pour elle et pour lui ?",
+      "question_ar": "تأخر الحمل بعد سنة من الزواج: متى أراجع الطبيب وما هي الفحوصات المطلوبة؟",
+      "terms": [
+        "infertility",
+        "fallopian",
+        "spermatogenesis",
+        "ovulation"
+      ],
+      "why": "12-17% of Moroccan couples (~900,000) are infertile, yet Morocco performs only ~4,000 ART cycles a year. The Rabat series found 39.6% female factor vs 28.2% male factor — directly countering the local assumption that delay is the wife's fault."
+    },
+    {
+      "specialty": "gynecology",
+      "question": "Ménopause : à quel âge, et que faire contre les bouffées de chaleur ?",
+      "question_ar": "سن اليأس: في أي عمر يبدأ وما هو علاج الهبات الساخنة وآلام المفاصل؟",
+      "terms": [
+        "menopause",
+        "oestrogen",
+        "climacteric",
+        "endometrium"
+      ],
+      "why": "Moroccan women reach menopause around 48.4 years, 1-3 years earlier than in industrialised countries; 61% report hot flashes and up to 90% joint pain, yet only 5% take any hormone treatment. A mass symptom burden that is almost entirely unmanaged."
+    },
+    {
+      "specialty": "gynecology",
+      "question": "Pilule : que faire en cas d'oubli, et rend-elle stérile ?",
+      "question_ar": "حبوب منع الحمل: ماذا أفعل إذا نسيت حبة، وهل تسبب العقم؟",
+      "terms": [
+        "contraceptive",
+        "oestrogen",
+        "thrombosis",
+        "ovulation"
+      ],
+      "why": "ENPSF 2018: contraceptive prevalence 70.8%, the pill about 82% of modern-method use. It is bought over the counter, so missed-pill and 'does it cause infertility' questions go to Google rather than to a gynaecologist."
+    },
+    {
+      "specialty": "orthopedics",
+      "question": "Mal de dos depuis des semaines : quand s'inquiéter et faut-il une radio ?",
+      "question_ar": "ألم أسفل الظهر المستمر، متى يكون خطيرا ومتى يجب عمل أشعة؟",
+      "terms": [
+        "low back pain",
+        "intervertebral disc",
+        "sciatica",
+        "vertebral"
+      ],
+      "why": "Low back pain is the world's leading cause of years lived with disability and the most prevalent musculoskeletal condition in MENA. The 1990-2019 analysis names Morocco as carrying a burden well above what its socio-demographic index predicts."
+    },
+    {
+      "specialty": "orthopedics",
+      "question": "Hernie discale et sciatique : faut-il opérer ?",
+      "question_ar": "الانزلاق الغضروفي وعرق النسا: هل يحتاج عملية جراحية؟",
+      "terms": [
+        "intervertebral disc",
+        "herniation",
+        "sciatica",
+        "nerve root"
+      ],
+      "why": "'الانزلاق الغضروفي' is saturated with clinic and medical-tourism pages — high, monetisable search demand. The operate-or-not decision is exactly where patients look for an independent opinion."
+    },
+    {
+      "specialty": "orthopedics",
+      "question": "Arthrose du genou : comment soulager, et quand faut-il une prothèse ?",
+      "question_ar": "خشونة الركبة: ما هو أفضل علاج ومتى تصبح عملية تغيير المفصل ضرورية؟",
+      "terms": [
+        "osteoarthritis",
+        "articular cartilage",
+        "joint",
+        "degenerative"
+      ],
+      "why": "Symptomatic knee osteoarthritis affects 9-14% of rheumatology consultations in Africa and the Middle East; Moroccan studies confirm obesity and kneeling — the position of prayer and domestic work — as major risk factors."
+    },
+    {
+      "specialty": "orthopedics",
+      "question": "Ostéoporose après la ménopause : comment savoir si mes os sont fragiles ?",
+      "question_ar": "هشاشة العظام بعد سن اليأس: كيف أعرف أنني مصابة وكيف أتجنب الكسور؟",
+      "terms": [
+        "osteoporosis",
+        "bone density",
+        "trabecular",
+        "fracture"
+      ],
+      "why": "A Moroccan meta-analysis (5,097 women, 2024) gives pooled postmenopausal osteoporosis prevalence of 32% — about one menopausal woman in three."
+    },
+    {
+      "specialty": "orthopedics",
+      "question": "J'ai mal aux os et aux muscles partout : est-ce un manque de vitamine D ?",
+      "question_ar": "ألم في العظام والعضلات في كل الجسم: هل السبب نقص فيتامين د؟",
+      "terms": [
+        "osteomalacia",
+        "vitamin d",
+        "calcium",
+        "bone"
+      ],
+      "why": "Among 415 healthy Moroccan women, 91% had vitamin D insufficiency despite the country's sunshine; series from Meknès and the east report 90-100%. The commonest and most under-diagnosed cause of diffuse bone pain in Morocco."
+    },
+    {
+      "specialty": "ophthalmology",
+      "question": "Je suis diabétique : à quelle fréquence faire examiner le fond de l'œil ?",
+      "question_ar": "مريض السكري متى يجب فحص قاع العين وما أعراض اعتلال الشبكية السكري؟",
+      "terms": [
+        "retinopathy",
+        "retina",
+        "diabetes",
+        "macular"
+      ],
+      "why": "Among Moroccan diabetics, retinopathy prevalence was 39.7% in Rabat (7% proliferative) and 44% in Marrakech — the leading cause of working-age blindness, in a country where about half of diabetics are unaware they have it."
+    },
+    {
+      "specialty": "ophthalmology",
+      "question": "Ma vue devient floue avec l'âge : cataracte, et quand opérer ?",
+      "question_ar": "ما هي أعراض المياه البيضاء في العين ومتى يجب إجراء عملية الساد؟",
+      "terms": [
+        "cataract",
+        "lens",
+        "opacity",
+        "ocular"
+      ],
+      "why": "Morocco's national blindness survey found age-related cataract causes 45.5% of blindness, with a surgical backlog of ~502,000 eyes. 'المياه البيضاء' is a high-volume Arabic query dominated by clinic marketing."
+    },
+    {
+      "specialty": "ophthalmology",
+      "question": "Le glaucome ne fait pas mal : comment savoir si je suis atteint ?",
+      "question_ar": "ما هي أعراض المياه الزرقاء (الجلوكوما) وكيف أعرف أنني مصاب بها؟",
+      "terms": [
+        "glaucoma",
+        "intraocular pressure",
+        "optic",
+        "visual field"
+      ],
+      "why": "An estimated 500,000-700,000 Moroccans have glaucoma but only 10-15% are diagnosed and treated. It causes over 14% of blindness in Morocco, and by the time central vision goes, 40-50% of optic nerve fibres are already lost."
+    },
+    {
+      "specialty": "ophthalmology",
+      "question": "Mon enfant plisse les yeux et se colle à l'écran : a-t-il besoin de lunettes ?",
+      "question_ar": "متى يحتاج طفلي إلى نظارات طبية وما علامات ضعف النظر عند الأطفال؟",
+      "terms": [
+        "refractive error",
+        "myopia",
+        "amblyopia",
+        "astigmatism"
+      ],
+      "why": "A Moroccan school-age study found astigmatism in 23.5%, hyperopia in 18.3% and myopia in 6.1%; refractive error is the second cause of childhood visual deficiency after cataract. There is no systematic school screening, so parents search this themselves."
+    },
+    {
+      "specialty": "ophthalmology",
+      "question": "Yeux secs et fatigués après des heures d'écran : est-ce grave ?",
+      "question_ar": "جفاف العين وإجهاد النظر بسبب الشاشات: الأسباب والعلاج",
+      "terms": [
+        "keratoconjunctivitis",
+        "cornea",
+        "lacrimal",
+        "conjunctiva"
+      ],
+      "why": "Arabic-speaking student populations report 74.6-76.1% positive dry-eye and computer-vision-syndrome symptoms, with most reporting 5+ hours of daily screen time — a young, high-volume complaint that maps onto urban Morocco."
+    },
+    {
+      "specialty": "otolaryngology",
+      "question": "J'éternue et j'ai le nez bouché chaque printemps : rhinite allergique ou rhume ?",
+      "question_ar": "ما هي أعراض حساسية الأنف وكيف أفرق بينها وبين الزكام العادي؟",
+      "terms": [
+        "rhinite|rhinitis",
+        "allergic",
+        "hypersensitivity",
+        "mucosa"
+      ],
+      "why": "ISAAC Phase III in four Moroccan centres found 27.9-52.8% of 13-14 year olds with nasal symptoms, rising significantly between phases; rural Settat reports 37.8% rhinitis prevalence."
+    },
+    {
+      "specialty": "otolaryngology",
+      "question": "Mon enfant fait des otites à répétition : quand consulter et faut-il des drains ?",
+      "question_ar": "طفلي يعاني من التهاب الأذن الوسطى المتكرر، ما هو العلاج ومتى يحتاج أنابيب؟",
+      "terms": [
+        "otite|otitis",
+        "middle ear",
+        "tympanic",
+        "effusion"
+      ],
+      "why": "Up to one child in four has an episode of acute otitis media before age 1 and about 60% before age 3. Moroccan hospital series document a high rate of chronic-otitis complications attributed to delayed diagnosis."
+    },
+    {
+      "specialty": "otolaryngology",
+      "question": "Mon enfant ronfle et dort la bouche ouverte : faut-il enlever les amygdales ?",
+      "question_ar": "طفلي يشخر وينام وفمه مفتوح، هل يجب استئصال اللوزتين واللحمية؟",
+      "terms": [
+        "amygdale|amygdales|tonsil",
+        "adenoid",
+        "hypertrophy",
+        "obstructive"
+      ],
+      "why": "Adenotonsillectomy is among the commonest paediatric operations — obstructive sleep apnoea is 48.8% of adenoidectomy indications and 80% of adenotonsillectomy. Moroccan commercial pages already rank on 'prix ablation des amygdales au Maroc', so the intent is high."
+    },
+    {
+      "specialty": "otolaryngology",
+      "question": "Nez bouché et pression sur le front depuis des mois : sinusite chronique ?",
+      "question_ar": "التهاب الجيوب الأنفية المزمن: ما أسبابه وكيف يمكن علاجه نهائياً؟",
+      "terms": [
+        "sinusite|sinusitis",
+        "paranasal",
+        "polyp",
+        "mucosa"
+      ],
+      "why": "Chronic rhinosinusitis is estimated at ~25% of the adult population in Saudi Arabia — one of the largest Arabic-language ENT search reservoirs — and allergic rhinitis, highly prevalent in Morocco, is its direct predisposing factor."
+    },
+    {
+      "specialty": "otolaryngology",
+      "question": "J'entends moins bien et j'ai des bourdonnements : quand faire un audiogramme ?",
+      "question_ar": "ضعف السمع وطنين الأذن: ما هي الأسباب ومتى أحتاج إلى سماعة؟",
+      "terms": [
+        "surdite|hypoacousie|deafness",
+        "cochlea",
+        "auditory",
+        "tinnitus"
+      ],
+      "why": "78.1 million people in the WHO Eastern Mediterranean Region have hearing loss, projected to rise 138% by 2050. Morocco's national disability survey attributes 22.1% of moderate-to-severe disability to hearing impairment."
+    },
+    {
+      "specialty": "nutrition",
+      "question": "Le sel iodé : à quoi ça sert, et que se passe-t-il quand on manque d'iode ?",
+      "question_ar": "ما فائدة الملح المعالج باليود وما أعراض نقص اليود على الغدة الدرقية؟",
+      "terms": [
+        "iodine",
+        "goitre",
+        "thyroid",
+        "deficiency"
+      ],
+      "why": "Morocco's national survey found 22% goitre in schoolchildren with regional rates up to 77%. Despite mandatory salt iodization since 1995, 2021-2022 surveys show Morocco is still mildly iodine deficient, with Atlas and Rif populations most at risk."
+    },
+    {
+      "specialty": "nutrition",
+      "question": "Manger salé fait-il vraiment monter la tension ?",
+      "question_ar": "هل الملح يرفع ضغط الدم فعلا وكم ملح في الخبز الذي نأكله يوميا؟",
+      "terms": [
+        "sodium",
+        "hypertension",
+        "renin",
+        "aldosterone"
+      ],
+      "why": "24-hour urinary sodium studies found 71.2% of Moroccan adults exceed the WHO 5 g/day salt limit. Bread alone averages half a kilo per person per day at 8-9 g salt per loaf."
+    },
+    {
+      "specialty": "nutrition",
+      "question": "On m'a dit que j'ai du gras sur le foie : d'où ça vient et est-ce grave ?",
+      "question_ar": "دهون على الكبد ما سببها وهل هي خطيرة؟",
+      "terms": [
+        "fatty liver",
+        "steatosis",
+        "cirrhosis",
+        "hepatic"
+      ],
+      "why": "Pooled MENA prevalence of fatty liver disease is 39.4% generally and 68.7% in type 2 diabetes; a Moroccan study found it in 45.6% of type 2 diabetics. 'دهون الكبد' is dominated by herbal-cure content rather than physiology."
+    },
+    {
+      "specialty": "nutrition",
+      "question": "Est-ce que manger du sucre donne le diabète ?",
+      "question_ar": "هل أكل السكر والمشروبات الغازية يسبب مرض السكري؟",
+      "terms": [
+        "diabetes",
+        "insulin",
+        "glucose",
+        "obesity"
+      ],
+      "why": "Morocco showed one of the steepest rises in sugar-sweetened-beverage consumption among young adults (+3.59%/year, 1990-2021) and is the only Eastern Mediterranean country taxing sugary drinks by sugar content — which keeps the question in public debate."
+    },
+    {
+      "specialty": "nutrition",
+      "question": "Pourquoi je reprends tout le poids perdu après le Ramadan ?",
+      "question_ar": "لماذا يعود الوزن بعد رمضان مباشرة رغم أنني خسرت وزنا في الصيام؟",
+      "terms": [
+        "obesity",
+        "adipose",
+        "metabolism",
+        "starvation"
+      ],
+      "why": "Meta-analyses show weight and fat mass fall during Ramadan and return within 2-5 weeks. A survey of 340 Moroccan households found food expenditure rose 50% during the month. A predictable annual search spike."
+    },
+    {
+      "specialty": "pediatrics",
+      "question": "La fièvre chez l'enfant : quand consulter en urgence ?",
+      "question_ar": "الحمى عند الأطفال: متى نذهب للطبيب؟",
+      "terms": [
+        "fever",
+        "pyrexia",
+        "infection",
+        "meningitis"
+      ],
+      "why": "The classic 2am parental search. Its value is triage: the article's job is to name the signs that mean go now."
+    },
+    {
+      "specialty": "pediatrics",
+      "question": "Mon enfant a la diarrhée : quand craindre la déshydratation ?",
+      "question_ar": "متى يكون الإسهال عند الأطفال خطيرًا؟ علامات الجفاف عند الرضيع",
+      "terms": [
+        "gastroenteritis",
+        "dehydration",
+        "diarrhoea",
+        "rotavirus"
+      ],
+      "why": "Before the vaccine, rotavirus caused 44% of under-5 gastroenteritis hospitalisations in Morocco — about 19,646 a year. The exact query already dominates the Arabic SERP via WebTeb and Altibbi, with no Moroccan equivalent."
+    },
+    {
+      "specialty": "pediatrics",
+      "question": "Mon bébé respire vite et siffle : bronchiolite, et quand hospitaliser ?",
+      "question_ar": "التهاب القصيبات عند الرضع: علامات ضيق التنفس ومتى ننقله للمستشفى؟",
+      "terms": [
+        "bronchiolitis",
+        "respiratory syncytial",
+        "bronchiole",
+        "pneumonia"
+      ],
+      "why": "At Rabat children's hospital, asthma exacerbations and acute bronchiolitis dominate paediatric respiratory admissions, peaking in autumn-winter. Acute respiratory infection was 13% of Moroccan under-5 deaths, and Morocco has no RSV surveillance, so there is no local content."
+    },
+    {
+      "specialty": "pediatrics",
+      "question": "Mon enfant a été piqué par un scorpion : que faire dans l'heure qui suit ?",
+      "question_ar": "طفلي لدغه عقرب: الإسعافات الأولية وعلامات الخطر ومتى نذهب للمستعجلات؟",
+      "terms": [
+        "envenomation",
+        "venom",
+        "scorpion",
+        "toxin"
+      ],
+      "why": "Morocco's poison centre recorded 20,583 scorpion stings in 2025, ~60% of all reported poisonings; 95% of deaths are in under-15s (~47 a year), peaking in summer. No Moroccan triage content ranks — the Arabic SERP is Mayo Clinic and Al Jazeera, neither matching the national protocol."
+    },
+    {
+      "specialty": "pediatrics",
+      "question": "Mon enfant a convulsé pendant la fièvre : est-ce grave, et risque-t-il l'épilepsie ?",
+      "question_ar": "التشنج الحراري عند الأطفال: ماذا أفعل أثناء النوبة؟ وهل يسبب الصرع؟",
+      "terms": [
+        "epilepsy",
+        "convulsion",
+        "seizure",
+        "meningitis"
+      ],
+      "why": "Febrile convulsions affect 2-5% of under-5s — tens of thousands of Moroccan families a year, and the single strongest cause of night-time panic in paediatrics."
+    },
+    {
+      "specialty": "dentistry",
+      "question": "Rage de dents la nuit : comment la calmer et quand consulter en urgence ?",
+      "question_ar": "كيف أخفف ألم الأسنان الشديد في الليل ومتى أزور الطبيب بشكل عاجل؟",
+      "terms": [
+        "dental caries",
+        "pulpitis",
+        "abscess",
+        "odontogenic"
+      ],
+      "why": "Morocco's 2012 national survey found dental caries in 91.8% of adults aged 35-44; in dental-emergency series toothache is the leading reason for consultation (68.1%), acute pulpitis the commonest diagnosis (44.6%)."
+    },
+    {
+      "specialty": "dentistry",
+      "question": "Mes gencives saignent quand je me brosse : est-ce grave ?",
+      "question_ar": "ما سبب نزيف اللثة عند تفريش الأسنان وكيف أعالجه؟",
+      "terms": [
+        "gingivitis",
+        "periodontitis",
+        "plaque",
+        "calculus"
+      ],
+      "why": "The 2012 national survey found periodontal disease in 79% of adults aged 35-44. A survey of 14,667 Moroccan schoolchildren found 46.9% with gingivitis and 12.3% with periodontitis at 12-18 — among the highest national rates reported anywhere."
+    },
+    {
+      "specialty": "dentistry",
+      "question": "Ma dent de sagesse me fait mal : faut-il l'enlever ?",
+      "question_ar": "متى يجب خلع ضرس العقل وهل خلعه مؤلم؟",
+      "terms": [
+        "impacted tooth",
+        "molar",
+        "pericoronitis",
+        "extraction"
+      ],
+      "why": "Third-molar impaction ranges 30.3-68.6% across populations and peaks at 17-25 — Morocco's demographic bulge. 'ضرس العقل' is one of the most content-saturated Arabic dental queries."
+    },
+    {
+      "specialty": "dentistry",
+      "question": "Faut-il soigner les caries des dents de lait ou attendre qu'elles tombent ?",
+      "question_ar": "هل يجب حشو أسنان الطفل اللبنية المسوسة أم نتركها حتى تسقط؟",
+      "terms": [
+        "dental caries",
+        "deciduous",
+        "enamel",
+        "fluoride"
+      ],
+      "why": "The 2012 national survey found caries in 81.8% of Moroccan 12-year-olds, and a 2021 MENA systematic review of caries determinants found zero eligible Moroccan studies — an explicit gap, so parents have almost no local authority content."
+    },
+    {
+      "specialty": "dentistry",
+      "question": "Le blanchiment des dents abîme-t-il l'émail ?",
+      "question_ar": "هل تبييض الأسنان يضر بمينا الأسنان؟",
+      "terms": [
+        "enamel",
+        "dentine",
+        "tooth",
+        "erosion"
+      ],
+      "why": "Arabic whitening queries sustain a dense commercial SERP of clinic price pages. In Morocco, where dental fees are unregulated, price-guide pages already rank — price is the dominant intent, and nobody answers the enamel question neutrally."
+    },
+    {
+      "specialty": "generalist",
+      "question": "J'ai des brûlures d'estomac presque tous les soirs : est-ce un reflux ?",
+      "question_ar": "ما هي أعراض ارتجاع المريء ومتى يكون خطيرا؟",
+      "terms": [
+        "reflux|oesophagite|oesophagitis",
+        "oesophagus",
+        "acid",
+        "sphincter"
+      ],
+      "why": "MENA reflux prevalence runs 8.7-33.1%, above the 15-25% world average (33% in Saudi Arabia). 'ارتجاع المريء' has competing dedicated pages on Altibbi, WebTeb and Al Jazeera Santé — a saturated keyword, so a high-volume one.",
+      "share_line": "Le lait et la menthe soulagent une minute puis relancent le reflux : ce n'est pas l'acidité du repas, c'est la valve de l'estomac qui ne ferme plus."
+    },
+    {
+      "specialty": "generalist",
+      "question": "On m'a trouvé du gras sur le foie : est-ce grave ?",
+      "question_ar": "هل دهون الكبد خطيرة وكيف أتخلص منها؟",
+      "terms": [
+        "fatty change|steatosis|steatose hepatique",
+        "liver",
+        "hepatic",
+        "obesity"
+      ],
+      "why": "A Moroccan cross-sectional study of 180 type 2 diabetics found NAFLD in 45.6%, with significant fibrosis in 18.3%; a second Moroccan series of 218 found 53.67%. Regionally the MENA meta-analysis gives 39.43% in the general population.",
+      "share_line": "Le foie gras n'a rien à voir avec l'alcool : au Maroc près d'un diabétique sur deux en a, et il ne fait aucun mal jusqu'au jour où il est trop tard."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Comment savoir si j'ai une hépatite B ou C alors que je ne me sens pas malade ?",
+      "question_ar": "ما هي أعراض التهاب الكبد الوبائي B و C وكيف يتم الكشف عنه؟",
+      "terms": [
+        "hepatitis|hepatite",
+        "liver",
+        "viral",
+        "chronic"
+      ],
+      "why": "Morocco's national seroprevalence survey gives HCV at 0.5% — about 125,000 chronic carriers — and a 2025 meta-analysis puts HBsAg at 1.33%. The Ministry of Health has launched the first national HCV screening campaign (150,000 rapid tests), targeting elimination by 2030.",
+      "share_line": "L'hépatite B et C ne fait ni douleur ni jaunisse pendant vingt ans : environ 125 000 Marocains la portent sans le savoir."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Qu'est-ce qui abîme le foie jusqu'à la cirrhose quand on ne boit pas d'alcool ?",
+      "question_ar": "ما هي أسباب تليف الكبد وهل يمكن علاجه؟",
+      "terms": [
+        "cirrhosis|cirrhose",
+        "liver",
+        "fibrosis",
+        "portal"
+      ],
+      "why": "In Morocco cirrhosis is mainly viral: in a Marrakech series of 76 hepatocellular carcinomas, underlying cirrhosis was present in 72.3% of cases — HCV in 18.2% and HBV in 12.7%, against 9.1% for alcohol.",
+      "share_line": "Au Maroc la cirrhose est d'abord virale, pas alcoolique : dans les séries hospitalières l'alcool n'explique qu'une petite minorité des cas."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Mes yeux et ma peau sont devenus jaunes : est-ce le foie ?",
+      "question_ar": "ما سبب اصفرار العين والجلد (اليرقان) ومتى يكون خطيرا؟",
+      "terms": [
+        "jaundice|ictere",
+        "bilirubin",
+        "biliary",
+        "obstruction"
+      ],
+      "why": "Morocco has intermediate hepatitis A endemicity: 51% of children aged 6 months to 14 years tested in Marrakech carried anti-HAV antibodies, rising to 70.3% of 7-14 year olds. Childhood jaundice is a common presenting complaint.",
+      "share_line": "Un jaunissement des yeux n'est jamais « un coup de froid du foie » : c'est un signal venant du sang, du foie ou des voies biliaires."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Douleurs sous les côtes à droite après un repas gras : des calculs de la vésicule ?",
+      "question_ar": "ما هي أعراض حصى المرارة وهل يجب استئصالها؟",
+      "terms": [
+        "gallstone|gall bladder|lithiase biliaire",
+        "biliary",
+        "cholecystitis",
+        "bile"
+      ],
+      "why": "The 2024 global meta-analysis gives a pooled gallstone prevalence around 6%, markedly higher in women (7.6% vs 5.4%) and tied to obesity and metabolic syndrome; Moroccan clinical sources put it at 10-15% of adults, peaking in women over 40.",
+      "share_line": "La crise de vésicule n'est pas une indigestion : la douleur monte sous les côtes droites jusqu'à l'épaule et revient après chaque repas gras."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Mon enfant a la diarrhée et vomit : quand s'inquiéter de la déshydratation ?",
+      "question_ar": "متى يكون الإسهال عند الأطفال خطيرا وكيف أعالج الجفاف؟",
+      "terms": [
+        "gastroenteritis|gastro-enterite|diarrhoea|diarrhee",
+        "dehydration",
+        "rotavirus",
+        "infant"
+      ],
+      "why": "Diarrhoeal disease is Morocco's second cause of infant morbidity and mortality after acute respiratory infection, with 4-8 episodes per child per year (SOMIPEV); rotavirus accounts for over 40% of under-5 diarrhoea hospitalisations.",
+      "share_line": "Couper l'eau pour « arrêter » la diarrhée d'un enfant est exactement ce qui le met en danger : c'est la déshydratation qui tue, pas la diarrhée."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Vomissements et crampes après un repas : intoxication alimentaire ?",
+      "question_ar": "ما هي أعراض التسمم الغذائي وكم يستمر؟",
+      "terms": [
+        "food poisoning|intoxication alimentaire|salmonella",
+        "toxin",
+        "bacterial",
+        "vomiting"
+      ],
+      "why": "Morocco's national epidemiological surveillance records 1,000-1,600 foodborne outbreak cases a year with a 30-45% hospitalisation rate (Bulletin d'épidémiologie n°79), and regional studies all note heavy under-reporting.",
+      "share_line": "Un plat resté quelques heures dehors peut rendre toute une famille malade sans avoir changé ni de goût ni d'odeur."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Comment reconnaître une appendicite et quand aller aux urgences ?",
+      "question_ar": "ما هي أعراض التهاب الزائدة الدودية ومتى يجب الذهاب للطوارئ؟",
+      "terms": [
+        "appendicitis|appendicite",
+        "peritonitis",
+        "abdomen",
+        "perforation"
+      ],
+      "why": "Appendicitis is the leading abdominal surgical emergency, with a 6-9% lifetime risk; roughly 28,000 appendicectomies are performed in Morocco each year, making it the country's most frequent emergency operation.",
+      "share_line": "Une appendicite qui « se calme » brusquement n'est pas guérie : c'est souvent le moment exact où elle vient de se perforer."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Mon enfant ne grandit pas et a le ventre gonflé : maladie cœliaque ?",
+      "question_ar": "ما هي أعراض حساسية القمح (الداء البطني) عند الأطفال؟",
+      "terms": [
+        "coeliac|celiaque",
+        "villous",
+        "gluten",
+        "malabsorption"
+      ],
+      "why": "In northern Morocco coeliac prevalence is estimated at 1 in 135. Among 550 Moroccan children with type 1 diabetes screened over 16 years, 10% had histologically proven coeliac disease — one of the highest rates published.",
+      "share_line": "La maladie cœliaque touche environ 1 Marocain sur 135 et se cache souvent derrière une anémie ou un enfant qui ne grandit pas, sans mal de ventre."
+    }
+  ]
+}

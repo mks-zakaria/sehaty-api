@@ -141,6 +141,13 @@ def test_doctor_profile_upsert_and_public_page(
     assert body["opening_hours"] == _OPENING_HOURS
     assert body["insurances"] == ["cnss", "cnops"]
     assert body["tiers_payant"] is True
+    # The landing app switches on both of these: the template decides which
+    # sections the page has, the layout decides which of the four designs builds
+    # it. A page served without them renders as the plain default, so they are
+    # part of the public contract and not merely an admin field.
+    assert body["landing"]["layout"] == "classic"
+    assert body["landing"]["layout_is_default"] is True
+    assert body["landing"]["template"]
 
 
 def test_specialties_endpoint_lists_seeded_catalogue(

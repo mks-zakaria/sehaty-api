@@ -28,6 +28,10 @@ class LandingConfigIn(BaseModel):
         default=None,
         description="Template key; omit to keep the specialty default.",
     )
+    layout: str | None = Field(
+        default=None,
+        description="Design key (classic, editorial, compact, clinique); omit to keep the current.",
+    )
     accent: str | None = Field(default=None, description="Hex colour, e.g. #2b73b3.")
     section_order: list[str] | None = None
     services: list[ServiceIn] | None = None
