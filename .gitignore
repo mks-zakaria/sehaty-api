@@ -21,3 +21,8 @@ doctors-*.csv
 # a date and a per-row source rather than "a script, once, somehow".
 !scripts/data/*.csv
 .sitemap-cache/
+
+# Textbook corpora built by scripts/build_corpus.py. The repo carries the code
+# that reads the books, never their contents: these are in-copyright works, and
+# whoever runs the pipeline supplies their own copy.
+scripts/data/corpus/

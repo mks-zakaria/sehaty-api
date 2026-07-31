@@ -21,6 +21,7 @@ from routers.auth import router as auth_router
 from routers.availability import router as availability_router
 from routers.backup import router as backup_router
 from routers.billing import router as billing_router
+from routers.booking_admin import router as booking_admin_router
 from routers.cabinets import router as cabinets_router
 from routers.chatbot import router as chatbot_router
 from routers.cities import router as cities_router
@@ -109,6 +110,7 @@ app.include_router(claims_router)
 app.include_router(confirmations_router)
 app.include_router(landing_events_router)
 app.include_router(landing_config_router)
+app.include_router(booking_admin_router)
 app.include_router(reviews_router)
 app.include_router(admin_router)
 app.include_router(billing_router)
