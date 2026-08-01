@@ -106,20 +106,26 @@ class TestTheThreeReceipts:
         assert self.presence.items[0].quantity == 1
         assert "unique" in self.presence.period
 
-    def test_presence_plus_rdv_is_the_pack_plus_twelve_months(self) -> None:
-        """600 + 12 × 199 — inside the 1 200-3 500 first-year band."""
-        assert self.presence_rdv.total == 600.0 + 12 * 199.0
-        assert self.presence_rdv.total == 2988.0
+    def test_presence_plus_rdv_bills_the_annual_rate_not_twelve_months(self) -> None:
+        """600 + 1 990, inside the 1 200-3 500 first-year band.
+
+        The annual rate is ten months, not twelve: two are offered. Charging
+        12 × 199 would take 398 DH the sheet just promised to waive.
+        """
+        assert self.presence_rdv.total == 600.0 + 1990.0
+        assert self.presence_rdv.total == 2590.0
+        assert self.presence_rdv.total < 600.0 + 12 * 199.0
         assert 1200 <= self.presence_rdv.total <= 3500
 
-    def test_the_renewal_is_a_quarter_of_the_founding_rate(self) -> None:
+    def test_the_renewal_is_the_quarterly_rate_from_the_sheet(self) -> None:
+        assert self.renewal.total == 597.0
         assert self.renewal.total == 3 * 199.0
         assert "Virement" in self.renewal.method
 
     def test_the_words_match_the_figures(self) -> None:
         assert receipts.in_words(self.presence.total) == "six cents dirhams"
         assert receipts.in_words(self.presence_rdv.total) == (
-            "deux mille neuf cent quatre-vingt-huit dirhams"
+            "deux mille cinq cent quatre-vingt-dix dirhams"
         )
         assert receipts.in_words(self.renewal.total) == ("cinq cent quatre-vingt-dix-sept dirhams")
 
@@ -134,6 +140,42 @@ class TestTheThreeReceipts:
     def test_the_free_page_is_not_sold_twice(self) -> None:
         """The page is free forever; only the agenda is a subscription."""
         assert "gratuite" in " ".join(self.renewal.notes)
+
+
+class TestAgreesWithTheSalesSheet:
+    """The sheet is handed over first; the receipt must not requote it.
+
+    This is the guard that was missing. The receipts originally billed a first
+    year as 12 × 199, while the sheet offers the year at 1 990 — two months
+    free. The doctor would have been charged 398 DH the sheet had just promised
+    to waive, on the same visit.
+    """
+
+    def _sheet_text(self, tmp_path: Path) -> str:
+        pytest.importorskip("pypdf")
+        import sales_sheet
+        from pypdf import PdfReader
+        from reportlab.lib.pagesizes import A4
+        from reportlab.pdfgen import canvas as rl_canvas
+
+        path = tmp_path / "sheet.pdf"
+        pdf = rl_canvas.Canvas(str(path), pagesize=A4)
+        sales_sheet.draw_recto(pdf)
+        pdf.save()
+        return PdfReader(path).pages[0].extract_text()
+
+    def test_every_receipt_rate_is_quoted_on_the_sheet(self, tmp_path: Path) -> None:
+        text = self._sheet_text(tmp_path).replace(" ", " ").replace("\xa0", " ")
+
+        for amount in (
+            receipts.PRESENCE_TTC,
+            receipts.RDV_MONTHLY_TTC,
+            receipts.RDV_QUARTER_TTC,
+            receipts.RDV_YEAR_TTC,
+        ):
+            # The sheet writes whole dirhams: "600 DH", "1 990 DH".
+            figure = receipts.money(amount).removesuffix(",00")
+            assert figure in text, f"{figure} DH is not quoted on the sales sheet"
 
 
 class TestRendering:

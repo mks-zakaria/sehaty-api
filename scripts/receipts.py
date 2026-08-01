@@ -66,10 +66,17 @@ PAPER = HexColor("#f8fafc")
 
 CURRENCY = "MAD"
 
-# The commercial model, in one place. These must stay in step with sales_sheet.
+# The commercial model, in one place. These must stay in step with sales_sheet:
+# the sheet is handed over first, and a receipt that recomputes a price the
+# doctor was just quoted contradicts you in their own file.
+#
+# The agenda is never billed monthly — collecting from twenty cabinets every
+# month does not scale — so only the quarter and the year have prices. The year
+# is not twelve months' worth: it is ten, with two offered.
 PRESENCE_TTC = 600.0
 RDV_MONTHLY_TTC = 199.0
-RDV_MONTHS_FIRST_YEAR = 12
+RDV_QUARTER_TTC = 597.0
+RDV_YEAR_TTC = 1990.0
 RDV_MONTHS_QUARTER = 3
 
 # Mentions that belong on a receipt for a cash payment.
@@ -295,13 +302,14 @@ def examples(issued_on: date, first_number: int, year: int) -> list[Receipt]:
                 unit_price=PRESENCE_TTC,
             ),
             LineItem(
-                label="Système de rendez-vous en ligne",
+                label="Système de rendez-vous en ligne — abonnement annuel",
                 detail=(
                     "Agenda en ligne, confirmations et rappels automatiques aux "
-                    "patients. Abonnement première année, réglé d'avance."
+                    "patients. Année réglée d'avance : 12 mois, dont 2 offerts "
+                    "(199 DH TTC/mois, tarif fondateur)."
                 ),
-                quantity=RDV_MONTHS_FIRST_YEAR,
-                unit_price=RDV_MONTHLY_TTC,
+                quantity=1,
+                unit_price=RDV_YEAR_TTC,
             ),
         ],
         method="Espèces",
@@ -324,10 +332,13 @@ def examples(issued_on: date, first_number: int, year: int) -> list[Receipt]:
         subject="Abonnement rendez-vous — renouvellement trimestriel",
         items=[
             LineItem(
-                label="Système de rendez-vous en ligne",
-                detail="Renouvellement, trimestre réglé d'avance.",
-                quantity=RDV_MONTHS_QUARTER,
-                unit_price=RDV_MONTHLY_TTC,
+                label="Système de rendez-vous en ligne — trimestre",
+                detail=(
+                    f"Renouvellement, {RDV_MONTHS_QUARTER} mois réglés d'avance "
+                    "(199 DH TTC/mois, tarif fondateur)."
+                ),
+                quantity=1,
+                unit_price=RDV_QUARTER_TTC,
             ),
         ],
         method="Virement bancaire",
