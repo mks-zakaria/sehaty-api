@@ -17,7 +17,10 @@ name: maintenance
 #                     EXACT one with a coarser geocode
 #   - reset-pin       undoes one doctor's hand-placed pin back to a geocode,
 #                     for when it was dropped at the wrong address
-#   - publish-articles  skips any article whose title is already published
+#   - publish-articles  skips any article already published; promotes a draft
+#                       of the same title rather than importing it twice.
+#                       Which batch it publishes is the `batch` input, so a new
+#                       set of articles needs a committed file, not a new task.
 #   - prospect-stats  reads only; writes nothing
 #
 # prospect-stats prints where the business stands — how many doctors are listed,
@@ -51,6 +54,11 @@ on:
       doctor_id:
         description: Doctor id — required by reset-pin, ignored otherwise
         required: false
+        type: string
+      batch:
+        description: Article batch for the publish-articles tasks (a file under scripts/data/articles/)
+        required: false
+        default: batch-2026-08-summer.jsonl
         type: string
       task:
         description: What to run on the droplet
@@ -100,11 +108,12 @@ jobs:
           TASK: ${{ inputs.task }}
           DOCTOR_ID: ${{ inputs.doctor_id }}
           REGION: ${{ inputs.region }}
+          BATCH: ${{ inputs.batch }}
         with:
           host: ${{ secrets.DO_HOST }}
           username: ${{ secrets.DO_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
-          envs: TASK,DOCTOR_ID,REGION
+          envs: TASK,DOCTOR_ID,REGION,BATCH
           script_stop: true
           command_timeout: 20m
           # appleboy runs this under the droplet's login shell; keep every line
@@ -130,8 +139,11 @@ jobs:
             test "$TASK" != "repair-addresses" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/repair_addresses.py
             test "$TASK" != "reset-pin" || test -n "$DOCTOR_ID"
             test "$TASK" != "reset-pin" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/geocode_doctors.py --doctor "$DOCTOR_ID" --force
-            test "$TASK" != "publish-articles-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_articles.py --file scripts/data/articles/batch-2026-07.jsonl --direct --dry-run
-            test "$TASK" != "publish-articles-drafts" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_articles.py --file scripts/data/articles/batch-2026-07.jsonl --direct
-            test "$TASK" != "publish-articles" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_articles.py --file scripts/data/articles/batch-2026-07.jsonl --direct --publish
+            test "$TASK" != "publish-articles-dry-run" || test -n "$BATCH"
+            test "$TASK" != "publish-articles-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_articles.py --file "scripts/data/articles/$BATCH" --direct --dry-run
+            test "$TASK" != "publish-articles-drafts" || test -n "$BATCH"
+            test "$TASK" != "publish-articles-drafts" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_articles.py --file "scripts/data/articles/$BATCH" --direct
+            test "$TASK" != "publish-articles" || test -n "$BATCH"
+            test "$TASK" != "publish-articles" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_articles.py --file "scripts/data/articles/$BATCH" --direct --publish
             test "$TASK" != "prospect-stats" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python -c "from sehaty.core.controllers.prospects import ProspectController; b = ProspectController.board(limit=1); print(f'listed={b.total} onboarded={b.onboarded} paying={b.paying} trialing={b.trialing} presence={b.presence}')"
             test "$TASK" != "import-doctors" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api sh -c "python scripts/build_errahma_csv.py > /tmp/doctors.csv && python scripts/import_doctors.py /tmp/doctors.csv"
