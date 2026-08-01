@@ -60,8 +60,15 @@ def _publish_direct(drafts: list[dict], *, publish: bool, dry_run: bool) -> int:
     # Imported here so the HTTP path keeps working outside the container, where
     # sehaty.core is not necessarily installed.
     from sehaty.core.controllers.articles import ArticleController
+    from sehaty.core.db.session import get_session
+    from sehaty.db import Article
+    from sqlalchemy import select
 
-    existing = {a.title for a in ArticleController.list_published(limit=200)}
+    # Titles already imported, at *any* status. Matching only against published
+    # ones would make the drafts run non-idempotent: nothing it wrote would be
+    # visible to the next run, so a second one would import the batch again.
+    with get_session() as session:
+        existing = set(session.execute(select(Article.title)).scalars())
     created = skipped = 0
     for draft in drafts:
         if draft["title"] in existing:
@@ -86,6 +93,8 @@ def _publish_direct(drafts: list[dict], *, publish: bool, dry_run: bool) -> int:
         print(f"  + {article.locale}  {article.slug[:56]}", file=sys.stderr)
 
     state = "published" if publish else "drafted"
+    if dry_run:
+        state = f"would be {state}"
     print(f"\n{created} {state}, {skipped} already present", file=sys.stderr)
     return 0
 
