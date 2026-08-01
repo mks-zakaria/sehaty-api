@@ -24,12 +24,15 @@ Receipt numbers are sequential per year (SEH-2026-0001). Pass `--number` to set
 the first one; the examples below are numbered from 1 and are marked SPECIMEN so
 that a sample can never be mistaken for a real receipt.
 
-Signature blocks are left blank on purpose — sign and stamp by hand, or drop in
-a scanned signature later.
+Signature blocks are left blank on purpose. Print the PDF and sign it by hand,
+or open the .docx, click inside the signature cell, drop a scanned signature in
+and print that. Both formats carry the same figures from the same constants, so
+neither can quietly drift from the other.
 
 Usage:
     cd sehaty-api
     uv run --extra print python scripts/receipts.py --out ./print
+    uv run --extra print python scripts/receipts.py --out ./print --format docx
 
 French only, by design: this is the language of Moroccan professional paperwork.
 (reportlab also cannot shape Arabic — see `print_assets.py`.)
@@ -550,7 +553,234 @@ def draw_page(pdf: canvas.Canvas, receipt: Receipt) -> None:
     pdf.showPage()
 
 
+# --------------------------------------------------------------------------
+# Word
+# --------------------------------------------------------------------------
+#
+# The same receipt as an editable .docx, because the signature and the stamp go
+# on after the fact — either scanned in, or typed over before printing. The PDF
+# is the thing you print; the Word file is the thing you finish.
+#
+# Laid out with tables rather than tabs. Word reflows text as soon as anyone
+# edits it, and a tab-aligned column silently falls apart the first time a
+# doctor's name runs long. A table cell does not move.
+
+
+def _docx_shade(cell, hex_colour: str) -> None:  # noqa: ANN001
+    """Fill a table cell. python-docx has no API for it, so write the XML."""
+    from docx.oxml.ns import qn
+    from docx.oxml.parser import OxmlElement
+
+    shade = OxmlElement("w:shd")
+    shade.set(qn("w:val"), "clear")
+    shade.set(qn("w:fill"), hex_colour)
+    cell._tc.get_or_add_tcPr().append(shade)
+
+
+def _docx_fix_widths(table, widths) -> None:  # noqa: ANN001
+    """Pin the column widths.
+
+    Word autofits by default, which collapses the désignation column to fit the
+    numbers and then wraps the description over six lines — enough to push the
+    second copy onto a second page. Fixing the layout needs both the table-level
+    ``tblLayout`` element and a width on every cell; setting one without the
+    other is silently ignored.
+    """
+    from docx.oxml.ns import qn
+
+    # `autofit = False` writes the tblLayout element itself, in the position the
+    # schema requires. Appending one by hand puts it after tblLook, out of
+    # order, and both Word and LibreOffice then ignore it.
+    table.autofit = False
+
+    for row in table.rows:
+        for cell, width in zip(row.cells, widths, strict=True):
+            cell.width = width
+
+    # Under a fixed layout the renderer lays the columns out from tblGrid, which
+    # still holds the equal widths from when the table was created. Setting only
+    # the cell widths changes nothing on the page.
+    for column, width in zip(table._tbl.tblGrid.gridCol_lst, widths, strict=True):
+        column.set(qn("w:w"), str(width.twips))
+
+
+def _docx_run(paragraph, text: str, *, size: int, bold: bool = False, colour=None, italic=False):  # noqa: ANN001, ANN202
+    from docx.shared import Pt
+
+    run = paragraph.add_run(text)
+    run.font.size = Pt(size)
+    run.bold = bold
+    run.italic = italic
+    if colour is not None:
+        run.font.color.rgb = colour
+    return run
+
+
+def _docx_copy(document, receipt: Receipt, *, copy_label: str) -> None:  # noqa: ANN001
+    """One copy of the receipt into an open document."""
+    from docx.enum.table import WD_TABLE_ALIGNMENT
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import Cm, Pt, RGBColor
+
+    ink = RGBColor(0x0F, 0x17, 0x2A)
+    brand = RGBColor(0x1B, 0x3D, 0x5E)
+    muted = RGBColor(0x64, 0x74, 0x8B)
+
+    head = document.add_paragraph()
+    head.paragraph_format.space_after = Pt(1)
+    _docx_run(head, "REÇU DE PAIEMENT", size=14, bold=True, colour=brand)
+
+    meta = document.add_paragraph()
+    meta.paragraph_format.space_after = Pt(1)
+    _docx_run(meta, f"{copy_label}  ·  ", size=8, colour=muted)
+    _docx_run(meta, f"N° {receipt.number}", size=10, bold=True, colour=ink)
+    _docx_run(meta, f"  ·  Casablanca, le {receipt.issued_on:%d/%m/%Y}", size=9, colour=muted)
+
+    issuer = document.add_paragraph()
+    issuer.paragraph_format.space_after = Pt(5)
+    _docx_run(issuer, f"{COMPANY['name']} — {COMPANY['address']}\n", size=7.5, colour=muted)
+    _docx_run(
+        issuer,
+        f"RC {COMPANY['rc']} — ICE {COMPANY['ice']} — IF {COMPANY['if']} — {CONTACT}",
+        size=7.5,
+        colour=muted,
+    )
+
+    for label, value, detail in (
+        ("REÇU DE", receipt.payer, receipt.payer_detail),
+        ("AU TITRE DE", receipt.subject, ""),
+    ):
+        block = document.add_paragraph()
+        block.paragraph_format.space_after = Pt(3)
+        _docx_run(block, f"{label}\n", size=7, colour=muted)
+        _docx_run(block, value, size=11, bold=True, colour=ink)
+        if detail:
+            _docx_run(block, f"   {detail}", size=9, colour=muted)
+
+    # Items.
+    item_widths = (Cm(11.3), Cm(1.3), Cm(2.6), Cm(2.6))
+    table = document.add_table(rows=1, cols=4)
+    table.style = "Table Grid"
+    table.alignment = WD_TABLE_ALIGNMENT.LEFT
+    for cell, text in zip(
+        table.rows[0].cells,
+        ("DÉSIGNATION", "QTÉ", "P.U. TTC", "TOTAL TTC"),
+        strict=True,
+    ):
+        _docx_shade(cell, "F1F5F9")
+        paragraph = cell.paragraphs[0]
+        paragraph.paragraph_format.space_after = Pt(0)
+        _docx_run(paragraph, text, size=7, bold=True, colour=muted)
+
+    for item in receipt.items:
+        cells = table.add_row().cells
+        first = cells[0].paragraphs[0]
+        first.paragraph_format.space_after = Pt(0)
+        _docx_run(first, item.label, size=9.5, bold=True, colour=ink)
+        detail = cells[0].add_paragraph()
+        detail.paragraph_format.space_before = Pt(0)
+        _docx_run(detail, item.detail, size=7.5, colour=muted)
+        for cell, text in zip(
+            cells[1:],
+            (str(item.quantity), money(item.unit_price), money(item.total)),
+            strict=True,
+        ):
+            paragraph = cell.paragraphs[0]
+            paragraph.paragraph_format.space_after = Pt(0)
+            _docx_run(paragraph, text, size=9.5, colour=ink)
+
+    _docx_fix_widths(table, item_widths)
+
+    total_row = document.add_paragraph()
+    total_row.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    total_row.paragraph_format.space_before = Pt(4)
+    total_row.paragraph_format.space_after = Pt(2)
+    _docx_run(total_row, "TOTAL RÉGLÉ   ", size=9, bold=True, colour=muted)
+    _docx_run(total_row, f"{money(receipt.total)} {CURRENCY}", size=14, bold=True, colour=brand)
+
+    method = document.add_paragraph()
+    method.paragraph_format.space_after = Pt(3)
+    _docx_run(method, f"Mode de règlement : {receipt.method}", size=8, colour=muted)
+    if receipt.period:
+        _docx_run(method, f"\n{receipt.period}", size=8, colour=muted)
+
+    spelled = document.add_paragraph()
+    spelled.paragraph_format.space_after = Pt(4)
+    _docx_run(
+        spelled,
+        f"Arrêté le présent reçu à la somme de : {in_words(receipt.total)}.",
+        size=8.5,
+        italic=True,
+        colour=ink,
+    )
+
+    for note in [*receipt.notes, TAX_NOTE, CASH_NOTE]:
+        line = document.add_paragraph()
+        line.paragraph_format.space_after = Pt(1)
+        _docx_run(line, note, size=6.5, colour=muted)
+
+    # Signatures. Two empty cells sized for a scanned signature: click inside,
+    # Insertion > Images, and it lands in the box instead of floating over the
+    # text the way a free-floating picture does.
+    signatures = document.add_table(rows=2, cols=2)
+    signatures.style = "Table Grid"
+    signatures.rows[0].height = Cm(1.5)
+    for cell in signatures.rows[0].cells:
+        cell.paragraphs[0].paragraph_format.space_after = Pt(0)
+    for cell, caption in zip(
+        signatures.rows[1].cells,
+        ("Le client", "Pour Sehaty — cachet et signature"),
+        strict=True,
+    ):
+        paragraph = cell.paragraphs[0]
+        paragraph.paragraph_format.space_after = Pt(0)
+        _docx_run(paragraph, caption, size=7, colour=muted)
+    _docx_fix_widths(signatures, (Cm(8.9), Cm(8.9)))
+
+    if receipt.specimen:
+        mark = document.add_paragraph()
+        mark.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        mark.paragraph_format.space_before = Pt(2)
+        _docx_run(mark, "SPÉCIMEN", size=10, bold=True, colour=RGBColor(0xD9, 0x26, 0x26))
+
+
+def write_docx(receipt: Receipt, path: Path) -> None:
+    """The receipt as an editable Word file, both copies, cut line between."""
+    from docx import Document
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import Cm, Pt, RGBColor
+
+    document = Document()
+    document.core_properties.title = f"Sehaty — Reçu {receipt.number}"
+
+    section = document.sections[0]
+    section.top_margin = section.bottom_margin = Cm(1.0)
+    section.left_margin = section.right_margin = Cm(1.6)
+
+    normal = document.styles["Normal"]
+    normal.font.name = "Calibri"
+    normal.font.size = Pt(10)
+    normal.paragraph_format.space_after = Pt(2)
+
+    _docx_copy(document, receipt, copy_label="Exemplaire client")
+
+    cut = document.add_paragraph()
+    cut.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    cut.paragraph_format.space_before = Pt(6)
+    cut.paragraph_format.space_after = Pt(6)
+    _docx_run(
+        cut,
+        "— — — — — — — — — —  découper ici  — — — — — — — — — —",
+        size=7,
+        colour=RGBColor(0x64, 0x74, 0x8B),
+    )
+
+    _docx_copy(document, receipt, copy_label="Souche — Sehaty")
+    document.save(str(path))
+
+
 SLUGS = ("presence", "presence-rdv", "rdv-renouvellement")
+FORMATS = ("pdf", "docx", "both")
 
 
 def main() -> int:
@@ -568,18 +798,33 @@ def main() -> int:
         default=date.today(),
         help="Issue date, YYYY-MM-DD (default today)",
     )
+    parser.add_argument(
+        "--format",
+        choices=FORMATS,
+        default="both",
+        help="pdf to print as-is, docx to sign and edit first (default both)",
+    )
     args = parser.parse_args()
 
     args.out.mkdir(parents=True, exist_ok=True)
     receipts = examples(args.date, args.number, args.date.year)
 
     for slug, receipt in zip(SLUGS, receipts, strict=True):
-        path = args.out / f"recu-{slug}.pdf"
-        pdf = canvas.Canvas(str(path), pagesize=A4)
-        pdf.setTitle(f"Sehaty — Reçu {receipt.number}")
-        draw_page(pdf, receipt)
-        pdf.save()
-        print(f"{receipt.number}  {money(receipt.total):>10} {CURRENCY}  {path}")
+        written: list[Path] = []
+        if args.format in ("pdf", "both"):
+            path = args.out / f"recu-{slug}.pdf"
+            pdf = canvas.Canvas(str(path), pagesize=A4)
+            pdf.setTitle(f"Sehaty — Reçu {receipt.number}")
+            draw_page(pdf, receipt)
+            pdf.save()
+            written.append(path)
+        if args.format in ("docx", "both"):
+            path = args.out / f"recu-{slug}.docx"
+            write_docx(receipt, path)
+            written.append(path)
+
+        files = "  ".join(str(p) for p in written)
+        print(f"{receipt.number}  {money(receipt.total):>10} {CURRENCY}  {files}")
 
     return 0
 
