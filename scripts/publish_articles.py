@@ -69,15 +69,16 @@ def _publish_direct(drafts: list[dict], *, publish: bool, dry_run: bool) -> int:
     # visible to the next run, so a second one would import the batch again.
     with get_session() as session:
         existing = {
-            title: (article_id, status)
-            for article_id, title, status in session.execute(
-                select(Article.id, Article.title, Article.status)
+            title: (article_id, status, topic_key)
+            for article_id, title, status, topic_key in session.execute(
+                select(Article.id, Article.title, Article.status, Article.topic_key)
             ).all()
         }
-    created = promoted = skipped = 0
+    created = promoted = keyed = skipped = 0
     for draft in drafts:
         if draft["title"] in existing:
-            article_id, status = existing[draft["title"]]
+            article_id, status, current_key = existing[draft["title"]]
+            wanted_key = draft.get("topic_key")
             # The batch was drafted by an earlier run and is being published
             # now. Skipping here would make the two-step flow — draft, read,
             # then publish — a dead end: the second run would report everything
@@ -87,6 +88,14 @@ def _publish_direct(drafts: list[dict], *, publish: bool, dry_run: bool) -> int:
                     ArticleController.review(article_id, approve=True)
                 promoted += 1
                 print(f"  ^ {draft['locale']}  {draft['title'][:56]}", file=sys.stderr)
+            # Backfill: an article published before the batch carried a topic
+            # key is grouped in place. Republishing it to add one would mint a
+            # new slug and break every link already crawled.
+            elif wanted_key and current_key != wanted_key:
+                if not dry_run:
+                    ArticleController.set_topic_key(article_id, wanted_key)
+                keyed += 1
+                print(f"  ~ {draft['locale']}  {wanted_key}", file=sys.stderr)
             else:
                 skipped += 1
             continue
@@ -102,6 +111,7 @@ def _publish_direct(drafts: list[dict], *, publish: bool, dry_run: bool) -> int:
             locale=draft.get("locale", "ar"),
             specialty_slug=draft.get("specialty_slug"),
             images=draft.get("images"),
+            topic_key=draft.get("topic_key"),
         )
         if publish:
             ArticleController.review(article.id, approve=True)
@@ -114,6 +124,8 @@ def _publish_direct(drafts: list[dict], *, publish: bool, dry_run: bool) -> int:
     summary = f"\n{created} {state}"
     if promoted:
         summary += f", {promoted} existing draft{'s' if promoted > 1 else ''} published"
+    if keyed:
+        summary += f", {keyed} grouped by topic"
     summary += f", {skipped} already present"
     print(summary, file=sys.stderr)
     return 0
