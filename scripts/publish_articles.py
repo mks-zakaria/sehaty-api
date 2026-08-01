@@ -61,18 +61,34 @@ def _publish_direct(drafts: list[dict], *, publish: bool, dry_run: bool) -> int:
     # sehaty.core is not necessarily installed.
     from sehaty.core.controllers.articles import ArticleController
     from sehaty.core.db.session import get_session
-    from sehaty.db import Article
+    from sehaty.db import Article, ArticleStatus
     from sqlalchemy import select
 
     # Titles already imported, at *any* status. Matching only against published
     # ones would make the drafts run non-idempotent: nothing it wrote would be
     # visible to the next run, so a second one would import the batch again.
     with get_session() as session:
-        existing = set(session.execute(select(Article.title)).scalars())
-    created = skipped = 0
+        existing = {
+            title: (article_id, status)
+            for article_id, title, status in session.execute(
+                select(Article.id, Article.title, Article.status)
+            ).all()
+        }
+    created = promoted = skipped = 0
     for draft in drafts:
         if draft["title"] in existing:
-            skipped += 1
+            article_id, status = existing[draft["title"]]
+            # The batch was drafted by an earlier run and is being published
+            # now. Skipping here would make the two-step flow — draft, read,
+            # then publish — a dead end: the second run would report everything
+            # "already present" and nothing would ever go live.
+            if publish and status != ArticleStatus.PUBLISHED:
+                if not dry_run:
+                    ArticleController.review(article_id, approve=True)
+                promoted += 1
+                print(f"  ^ {draft['locale']}  {draft['title'][:56]}", file=sys.stderr)
+            else:
+                skipped += 1
             continue
         if dry_run:
             created += 1
@@ -95,7 +111,11 @@ def _publish_direct(drafts: list[dict], *, publish: bool, dry_run: bool) -> int:
     state = "published" if publish else "drafted"
     if dry_run:
         state = f"would be {state}"
-    print(f"\n{created} {state}, {skipped} already present", file=sys.stderr)
+    summary = f"\n{created} {state}"
+    if promoted:
+        summary += f", {promoted} existing draft{'s' if promoted > 1 else ''} published"
+    summary += f", {skipped} already present"
+    print(summary, file=sys.stderr)
     return 0
 
 
