@@ -45,11 +45,65 @@ def call(api: str, path: str, token: str, payload: dict | None = None) -> dict |
         return json.load(response) if response.status != 204 else None
 
 
+def _publish_direct(drafts: list[dict], *, publish: bool, dry_run: bool) -> int:
+    """Write straight through the controllers, no HTTP and no token.
+
+    The same path the other droplet maintenance tasks take. It exists so that
+    publishing a batch never requires a production admin token to be minted,
+    pasted into a terminal or carried through a chat window — the operation runs
+    where the credentials already are.
+
+    The rules still apply: this calls the same controller the API calls, so the
+    source requirement and the review step are enforced exactly as they are for
+    a single article created from the console.
+    """
+    # Imported here so the HTTP path keeps working outside the container, where
+    # sehaty.core is not necessarily installed.
+    from sehaty.core.controllers.articles import ArticleController
+
+    existing = {a.title for a in ArticleController.list_published(limit=200)}
+    created = skipped = 0
+    for draft in drafts:
+        if draft["title"] in existing:
+            skipped += 1
+            continue
+        if dry_run:
+            created += 1
+            print(f"  + {draft['locale']}  {draft['title'][:56]} (dry run)", file=sys.stderr)
+            continue
+        article = ArticleController.write_from_sources(
+            title=draft["title"],
+            body=draft["body"],
+            sources=draft["sources"],
+            summary=draft.get("summary"),
+            locale=draft.get("locale", "ar"),
+            specialty_slug=draft.get("specialty_slug"),
+            images=draft.get("images"),
+        )
+        if publish:
+            ArticleController.review(article.id, approve=True)
+        created += 1
+        print(f"  + {article.locale}  {article.slug[:56]}", file=sys.stderr)
+
+    state = "published" if publish else "drafted"
+    print(f"\n{created} {state}, {skipped} already present", file=sys.stderr)
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--file", required=True, type=Path)
-    parser.add_argument("--api", required=True)
-    parser.add_argument("--token", required=True)
+    parser.add_argument("--api", default=None, help="API base URL. Omit with --direct.")
+    parser.add_argument("--token", default=None, help="Admin bearer token. Omit with --direct.")
+    parser.add_argument(
+        "--direct",
+        action="store_true",
+        help=(
+            "Write through the controllers instead of over HTTP. For running "
+            "inside the api container on the droplet, where there is no token to "
+            "hold and no secret to hand around."
+        ),
+    )
     parser.add_argument(
         "--publish",
         action="store_true",
@@ -60,6 +114,12 @@ def main() -> int:
 
     lines = args.file.read_text(encoding="utf-8").splitlines()
     drafts = [json.loads(line) for line in lines if line.strip()]
+
+    if args.direct:
+        return _publish_direct(drafts, publish=args.publish, dry_run=args.dry_run)
+    if not (args.api and args.token):
+        raise SystemExit("--api and --token are required unless --direct is given")
+
     existing = {a["title"] for a in (call(args.api, "/api/v1/articles", args.token) or [])}
 
     created = skipped = 0

@@ -17,6 +17,14 @@ name: maintenance
 #                     EXACT one with a coarser geocode
 #   - reset-pin       undoes one doctor's hand-placed pin back to a geocode,
 #                     for when it was dropped at the wrong address
+#   - publish-articles  skips any article whose title is already published
+#
+# Publishing runs inside the container through the controllers, so no production
+# admin token is ever minted, pasted into a terminal or carried through a chat
+# window. Three variants on purpose: a dry run, one that leaves the batch as
+# DRAFTS for a human to read in the console, and one that publishes. The default
+# for a first batch should be drafts — approving later is one more click, and
+# unpublishing after Google has crawled is not.
 #
 # Errahma imports from a committed generator; the city-wide list imports from a
 # dated snapshot under scripts/data/. Snapshots are tracked on purpose: the
@@ -56,6 +64,9 @@ on:
           - reset-pin
           - repair-addresses-dry-run
           - repair-addresses
+          - publish-articles-dry-run
+          - publish-articles-drafts
+          - publish-articles
         default: import-doctors-dry-run
 
 concurrency:
@@ -110,4 +121,7 @@ jobs:
             test "$TASK" != "repair-addresses" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/repair_addresses.py
             test "$TASK" != "reset-pin" || test -n "$DOCTOR_ID"
             test "$TASK" != "reset-pin" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/geocode_doctors.py --doctor "$DOCTOR_ID" --force
+            test "$TASK" != "publish-articles-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_articles.py --file scripts/data/articles/batch-2026-07.jsonl --direct --dry-run
+            test "$TASK" != "publish-articles-drafts" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_articles.py --file scripts/data/articles/batch-2026-07.jsonl --direct
+            test "$TASK" != "publish-articles" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_articles.py --file scripts/data/articles/batch-2026-07.jsonl --direct --publish
             test "$TASK" != "import-doctors" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api sh -c "python scripts/build_errahma_csv.py > /tmp/doctors.csv && python scripts/import_doctors.py /tmp/doctors.csv"
