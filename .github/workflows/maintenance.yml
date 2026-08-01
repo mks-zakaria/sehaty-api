@@ -18,6 +18,14 @@ name: maintenance
 #   - reset-pin       undoes one doctor's hand-placed pin back to a geocode,
 #                     for when it was dropped at the wrong address
 #   - publish-articles  skips any article whose title is already published
+#   - prospect-stats  reads only; writes nothing
+#
+# prospect-stats prints where the business stands — how many doctors are listed,
+# how many have been onboarded, how many are actually paying, how many are on
+# the free trial, and how many bought the Pack Présence. Trials are reported
+# apart from paying on purpose: flipping a doctor's RDV switch on at the desk
+# opens a 90-day trial, so counting the two together reports revenue that has
+# not arrived.
 #
 # Publishing runs inside the container through the controllers, so no production
 # admin token is ever minted, pasted into a terminal or carried through a chat
@@ -67,6 +75,7 @@ on:
           - publish-articles-dry-run
           - publish-articles-drafts
           - publish-articles
+          - prospect-stats
         default: import-doctors-dry-run
 
 concurrency:
@@ -124,4 +133,5 @@ jobs:
             test "$TASK" != "publish-articles-dry-run" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_articles.py --file scripts/data/articles/batch-2026-07.jsonl --direct --dry-run
             test "$TASK" != "publish-articles-drafts" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_articles.py --file scripts/data/articles/batch-2026-07.jsonl --direct
             test "$TASK" != "publish-articles" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_articles.py --file scripts/data/articles/batch-2026-07.jsonl --direct --publish
+            test "$TASK" != "prospect-stats" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python -c "from sehaty.core.controllers.prospects import ProspectController; b = ProspectController.board(limit=1); print(f'listed={b.total} onboarded={b.onboarded} paying={b.paying} trialing={b.trialing} presence={b.presence}')"
             test "$TASK" != "import-doctors" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api sh -c "python scripts/build_errahma_csv.py > /tmp/doctors.csv && python scripts/import_doctors.py /tmp/doctors.csv"
