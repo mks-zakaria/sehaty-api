@@ -36,6 +36,9 @@ _spec.loader.exec_module(receipts)
 
 ISSUED = date(2026, 8, 1)
 
+# Word stores column widths in twentieths of a point; 566.9 of them make a cm.
+_W_ATTR = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}w"
+
 
 class TestAmountInWords:
     @pytest.mark.parametrize(
@@ -176,6 +179,70 @@ class TestAgreesWithTheSalesSheet:
             # The sheet writes whole dirhams: "600 DH", "1 990 DH".
             figure = receipts.money(amount).removesuffix(",00")
             assert figure in text, f"{figure} DH is not quoted on the sales sheet"
+
+
+class TestWord:
+    """The .docx exists so the signature and stamp can go on before printing."""
+
+    def _document(self, tmp_path: Path, slug: str = "presence-rdv"):  # noqa: ANN202
+        pytest.importorskip("docx")
+        from docx import Document
+
+        sys.argv = ["receipts.py", "--out", str(tmp_path), "--format", "docx"]
+        assert receipts.main() == 0
+        return Document(str(tmp_path / f"recu-{slug}.docx"))
+
+    def test_writes_one_word_file_per_receipt(self, tmp_path: Path) -> None:
+        self._document(tmp_path)
+        written = sorted(p.name for p in tmp_path.glob("*.docx"))
+        assert written == [
+            "recu-presence-rdv.docx",
+            "recu-presence.docx",
+            "recu-rdv-renouvellement.docx",
+        ]
+        # --format docx means docx: no PDFs alongside it.
+        assert list(tmp_path.glob("*.pdf")) == []
+
+    def test_carries_the_same_figures_as_the_pdf(self, tmp_path: Path) -> None:
+        document = self._document(tmp_path)
+        text = "\n".join(p.text for p in document.paragraphs)
+
+        assert "2 590,00 MAD" in text
+        assert "deux mille cinq cent quatre-vingt-dix dirhams" in text
+        assert "SPÉCIMEN" in text
+
+    def test_holds_both_copies_with_a_cut_line(self, tmp_path: Path) -> None:
+        document = self._document(tmp_path)
+        text = "\n".join(p.text for p in document.paragraphs)
+
+        assert "Exemplaire client" in text
+        assert "Souche — Sehaty" in text
+        assert "découper ici" in text
+
+    def test_leaves_an_empty_box_to_drop_a_signature_into(self, tmp_path: Path) -> None:
+        """A cell, not a floating image anchor: dropping a picture into a cell
+        keeps it where it was put instead of sliding over the text."""
+        document = self._document(tmp_path)
+        signatures = document.tables[-1]
+
+        assert [cell.text for cell in signatures.rows[0].cells] == ["", ""]
+        assert [cell.text for cell in signatures.rows[1].cells] == [
+            "Le client",
+            "Pour Sehaty — cachet et signature",
+        ]
+
+    def test_the_columns_are_pinned_so_word_cannot_reflow_them(self, tmp_path: Path) -> None:
+        """Autofit collapses the désignation column and pushes the souche onto a
+        second page, which breaks the cut-in-half layout."""
+        document = self._document(tmp_path)
+        items = document.tables[0]
+
+        assert items.autofit is False
+        widths = [round(cell.width.cm, 1) for cell in items.rows[0].cells]
+        assert widths == [11.3, 1.3, 2.6, 2.6]
+        # The grid has to agree, or a fixed layout still renders the old widths.
+        grid = [round(int(col.get(_W_ATTR)) / 566.9, 1) for col in items._tbl.tblGrid.gridCol_lst]
+        assert grid == widths
 
 
 class TestRendering:
