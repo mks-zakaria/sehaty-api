@@ -7,10 +7,10 @@ answer for each.
 
 The "not included" block is on the sheet deliberately. Selling twenty doctors on
 an implied feature creates twenty obligations, and the fastest way to lose a
-500 DH customer is to have promised booking that does not exist yet. Saying it
+600 DH customer is to have promised booking that does not exist yet. Saying it
 in print is what makes the rest of the page credible.
 
-Prices here must stay in step with the commercial model: 500 DH one-time (list
+Prices here must stay in step with the commercial model: 600 DH one-time (list
 900), then 199 DH/month founding rate locked 24 months against a 349 public
 price, billed quarterly or annually — never monthly, because collecting cash
 from twenty cabinets every month does not scale.
@@ -64,7 +64,7 @@ COMPANY = {
 # pay, and so the sheet matches the invoice they will receive.
 TAX_NOTE = "Tous les prix sont TTC (TVA 20 % incluse)."
 
-# (title, detail) — the seven things the 500 DH actually buys.
+# (title, detail) — the seven things the 600 DH actually buys.
 DELIVERABLES = [
     (
         "Votre page web professionnelle",
@@ -126,7 +126,7 @@ OBJECTIONS = [
     (
         "« C'est cher. »",
         "Un développeur freelance facture 2 000 à 5 000 DH pour un site basique, "
-        "plus l'hébergement chaque année. Ici c'est 500 DH TTC, une seule fois, "
+        "plus l'hébergement chaque année. Ici c'est 600 DH TTC, une seule fois, "
         "livré en 48 heures, fiche Google comprise.",
     ),
     (
@@ -238,10 +238,10 @@ def draw_recto(pdf: canvas.Canvas) -> None:
     # Price, with the list price struck through so 500 reads as the discount.
     pdf.setFont("Helvetica-Bold", 20)
     pdf.setFillColor(BRAND)
-    pdf.drawString(left, height - 53 * mm, "500 DH TTC")
+    pdf.drawString(left, height - 53 * mm, "600 DH TTC")
     pdf.setFont("Helvetica", 11)
     pdf.setFillColor(MUTED)
-    paid_w = pdf.stringWidth("500 DH TTC", "Helvetica-Bold", 20)
+    paid_w = pdf.stringWidth("600 DH TTC", "Helvetica-Bold", 20)
     pdf.drawString(left + paid_w + 4 * mm, height - 53 * mm, "une seule fois")
     once_w = pdf.stringWidth("une seule fois", "Helvetica", 11)
     struck_x = left + paid_w + 4 * mm + once_w + 4 * mm

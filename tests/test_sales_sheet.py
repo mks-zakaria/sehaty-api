@@ -91,7 +91,7 @@ class TestPricingConsistency:
     @pytest.mark.parametrize(
         "figure",
         [
-            "500 DH TTC",  # one-time pack
+            "600 DH TTC",  # one-time pack
             "900 DH",  # struck-through list price
             "199 DH TTC",  # founding monthly rate
             "349 DH",  # public monthly price
