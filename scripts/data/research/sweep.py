@@ -4,7 +4,11 @@ Autocomplete is ranked by real query volume in the region, so it is the closest
 thing to demand data available without an ads account.
 """
 
-import json, urllib.parse, urllib.request, time, sys, collections
+import collections
+import json
+import time
+import urllib.parse
+import urllib.request
 
 SEEDS = {
     "fr": [
