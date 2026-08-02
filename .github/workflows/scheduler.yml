@@ -1,0 +1,72 @@
+name: scheduler
+
+# Publish the articles whose time has come.
+#
+# The blog is written in batches — a season's worth in an afternoon — and
+# publishing a batch all at once is worth less than releasing it steadily. A
+# reader who finds one useful article and returns a week later to another is the
+# audience this is for; twelve articles landing in one minute reads as a dump,
+# and gives a crawler no reason to come back.
+#
+# Runs every two hours rather than continuously. The unit of scheduling here is
+# a morning, not a minute: nothing in a health blog needs to appear at 09:03
+# exactly, and a cron that fires twelve times a day is twelve chances to notice
+# something is wrong rather than seven hundred.
+#
+# GitHub's scheduled runs are best-effort and drift under load, sometimes by
+# tens of minutes. That is fine by design — `publish_due` publishes everything
+# already due, so a missed run means the next one catches up rather than an
+# article being skipped.
+#
+# Safe to run when there is nothing to do: it prints "0 published" and exits.
+# Safe to run twice: publishing clears the date, so a replay finds nothing.
+
+on:
+  schedule:
+    # Every two hours. Times are UTC; Morocco is UTC+1, so this lands on the
+    # odd hours locally.
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Show what would publish, without publishing it
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  # Shares the deploy group: never publish while the stack is being rebuilt
+  # underneath, and never let two sweeps overlap.
+  group: sehaty-droplet-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish-due:
+    runs-on: ubuntu-latest
+    env:
+      DO_HOST: ${{ secrets.DO_HOST }}
+    steps:
+      - name: Publish scheduled articles
+        # A fork, or a repo with no droplet configured, has no business trying.
+        if: ${{ env.DO_HOST != '' }}
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          envs: DRY_RUN
+          script_stop: true
+          command_timeout: 10m
+          # appleboy runs this under the droplet's login shell; keep every line a
+          # single standalone command (no multi-line if/for/case constructs —
+          # the shell fails to parse them and aborts the whole script).
+          script: |
+            set -eu
+            cd /opt/sehaty/sehaty-api/deploy
+            test "$DRY_RUN" = "true" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_scheduled.py
+            test "$DRY_RUN" != "true" || docker compose -f docker-compose.prod.yml --env-file .env run --rm api python scripts/publish_scheduled.py --dry-run

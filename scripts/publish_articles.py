@@ -59,10 +59,25 @@ def _publish_direct(drafts: list[dict], *, publish: bool, dry_run: bool) -> int:
     """
     # Imported here so the HTTP path keeps working outside the container, where
     # sehaty.core is not necessarily installed.
+    from datetime import UTC, datetime
+
     from sehaty.core.controllers.articles import ArticleController
     from sehaty.core.db.session import get_session
     from sehaty.db import Article, ArticleStatus
     from sqlalchemy import select
+
+    def scheduled(draft: dict):  # noqa: ANN202
+        """`publish_at` from the batch file, as an aware datetime.
+
+        Dates are written in the file rather than passed on the command line so
+        the calendar is committed and reviewable — a schedule that lives in
+        someone's shell history is not a schedule.
+        """
+        raw = draft.get("publish_at")
+        if not raw:
+            return None
+        stamp = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        return stamp if stamp.tzinfo else stamp.replace(tzinfo=UTC)
 
     # Titles already imported, at *any* status. Matching only against published
     # ones would make the drafts run non-idempotent: nothing it wrote would be
@@ -74,7 +89,7 @@ def _publish_direct(drafts: list[dict], *, publish: bool, dry_run: bool) -> int:
                 select(Article.id, Article.title, Article.status, Article.topic_key)
             ).all()
         }
-    created = promoted = keyed = skipped = 0
+    created = promoted = keyed = skipped = scheduled_count = queued = 0
     for draft in drafts:
         if draft["title"] in existing:
             article_id, status, current_key = existing[draft["title"]]
@@ -83,7 +98,18 @@ def _publish_direct(drafts: list[dict], *, publish: bool, dry_run: bool) -> int:
             # now. Skipping here would make the two-step flow — draft, read,
             # then publish — a dead end: the second run would report everything
             # "already present" and nothing would ever go live.
-            if publish and status != ArticleStatus.PUBLISHED:
+            if publish and scheduled(draft) is not None and status != ArticleStatus.PUBLISHED:
+                # Re-running a batch re-applies its dates, so the calendar can
+                # be edited in the file and pushed rather than re-entered.
+                if not dry_run:
+                    ArticleController.schedule(article_id, scheduled(draft))
+                scheduled_count += 1
+                print(
+                    f"  @ {draft['locale']}  {draft['title'][:44]}"
+                    f"  {scheduled(draft):%Y-%m-%d %H:%M}",
+                    file=sys.stderr,
+                )
+            elif publish and status != ArticleStatus.PUBLISHED:
                 if not dry_run:
                     ArticleController.review(article_id, approve=True)
                 promoted += 1
@@ -112,18 +138,37 @@ def _publish_direct(drafts: list[dict], *, publish: bool, dry_run: bool) -> int:
             specialty_slug=draft.get("specialty_slug"),
             images=draft.get("images"),
             topic_key=draft.get("topic_key"),
+            scheduled_for=scheduled(draft),
         )
-        if publish:
+        # A dated draft is left for the scheduler even under --publish: the date
+        # in the file is the instruction, and honouring it only sometimes would
+        # make the calendar meaningless.
+        when = scheduled(draft)
+        if publish and when is None:
             ArticleController.review(article.id, approve=True)
-        created += 1
-        print(f"  + {article.locale}  {article.slug[:56]}", file=sys.stderr)
+        if when is not None:
+            queued += 1
+            print(
+                f"  @ {article.locale}  {article.slug[:44]}  {when:%Y-%m-%d %H:%M}",
+                file=sys.stderr,
+            )
+        else:
+            created += 1
+            print(f"  + {article.locale}  {article.slug[:56]}", file=sys.stderr)
 
     state = "published" if publish else "drafted"
     if dry_run:
         state = f"would be {state}"
+    # Reported apart from `created`: an article written with a date in the file
+    # was queued, not published, and saying "published" of something nobody can
+    # read yet is the kind of report that gets believed.
     summary = f"\n{created} {state}"
+    if queued:
+        summary += f", {queued} queued for their date"
     if promoted:
         summary += f", {promoted} existing draft{'s' if promoted > 1 else ''} published"
+    if scheduled_count:
+        summary += f", {scheduled_count} scheduled"
     if keyed:
         summary += f", {keyed} grouped by topic"
     summary += f", {skipped} already present"
