@@ -859,6 +859,146 @@
       ],
       "why": "In northern Morocco coeliac prevalence is estimated at 1 in 135. Among 550 Moroccan children with type 1 diabetes screened over 16 years, 10% had histologically proven coeliac disease — one of the highest rates published.",
       "share_line": "La maladie cœliaque touche environ 1 Marocain sur 135 et se cache souvent derrière une anémie ou un enfant qui ne grandit pas, sans mal de ventre."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Brûlures et remontées acides après les repas : est-ce un reflux ?",
+      "question_ar": "حرقة وارتجاع بعد الأكل: هل هو ارتجاع مريئي؟",
+      "terms": [
+        "oesophagus",
+        "oesophageal",
+        "stomach",
+        "gastric"
+      ],
+      "why": "One of the commonest reasons adults self-medicate indefinitely without ever being examined."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Constipation qui dure : quand est-ce inquiétant ?",
+      "question_ar": "إمساك مستمر: متى يصبح مقلقا؟",
+      "terms": [
+        "large intestine",
+        "colon",
+        "bowel",
+        "diverticular"
+      ],
+      "why": "A change in bowel habit is the symptom most often dismissed at home and most worth examining after forty."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Du sang dans les selles : hémorroïdes ou autre chose ?",
+      "question_ar": "دم في البراز: بواسير أم شيء آخر؟",
+      "terms": [
+        "rectum",
+        "anal canal",
+        "colorectal",
+        "bowel"
+      ],
+      "why": "Attributing all rectal bleeding to haemorrhoids is the delay that matters most in colorectal disease."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Sang dans les urines : que faut-il faire ?",
+      "question_ar": "دم في البول: ماذا يجب أن تفعل؟",
+      "terms": [
+        "haematuria",
+        "urinary tract",
+        "bladder",
+        "renal"
+      ],
+      "why": "Painless haematuria is easy to ignore once it stops, and is the presentation that must never be ignored."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Infections urinaires à répétition chez la femme : pourquoi et que faire ?",
+      "question_ar": "التهابات بولية متكررة عند المرأة: لماذا وماذا نفعل؟",
+      "terms": [
+        "urinary tract infection",
+        "cystitis",
+        "pyelonephritis"
+      ],
+      "why": "Extremely common, routinely self-treated with leftover antibiotics, and a driver of resistance."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Une toux qui dure plus de trois semaines : faut-il s'inquiéter ?",
+      "question_ar": "سعال يستمر أكثر من ثلاثة أسابيع: هل يدعو للقلق؟",
+      "terms": [
+        "tuberculosis",
+        "pulmonary",
+        "lung",
+        "respiratory"
+      ],
+      "why": "The threshold at which a cough stops being a cold is not common knowledge, and tuberculosis remains present in Morocco."
+    },
+    {
+      "specialty": "generalist",
+      "question": "J'ai un ganglion gonflé dans le cou : est-ce grave ?",
+      "question_ar": "عندي غدة منتفخة في الرقبة: هل هذا خطير؟",
+      "terms": [
+        "lymphadenopathy",
+        "lymph node",
+        "lymphoma"
+      ],
+      "why": "A lump someone can feel themselves is the commonest reason for an anxious first consultation."
+    },
+    {
+      "specialty": "generalist",
+      "question": "On m'a trouvé un nodule sur la thyroïde : est-ce dangereux ?",
+      "question_ar": "وجدوا عندي عقيدة في الغدة الدرقية: هل هي خطيرة؟",
+      "terms": [
+        "thyroid",
+        "goitre",
+        "thyroid nodule"
+      ],
+      "why": "Thyroid nodules are frequently found incidentally and almost always benign, which is exactly what patients are not told."
+    },
+    {
+      "specialty": "generalist",
+      "question": "Jaunisse chez l'adulte : quelles sont les causes ?",
+      "question_ar": "اليرقان عند البالغ: ما أسبابه؟",
+      "terms": [
+        "jaundice",
+        "hepatitis",
+        "bilirubin",
+        "liver"
+      ],
+      "why": "A visible sign that reliably brings someone in, but only if they know it is never normal."
+    },
+    {
+      "specialty": "otolaryngology",
+      "question": "Saignements de nez fréquents : quand consulter ?",
+      "question_ar": "نزيف أنفي متكرر: متى تستشير الطبيب؟",
+      "terms": [
+        "epistaxis",
+        "nasal",
+        "nose bleeding"
+      ],
+      "why": "Usually benign, occasionally the first sign of something else, and almost always managed wrongly at home."
+    },
+    {
+      "specialty": "otolaryngology",
+      "question": "Des vertiges qui reviennent : d'où viennent-ils ?",
+      "question_ar": "دوخة متكررة: من أين تأتي؟",
+      "terms": [
+        "vertige",
+        "vestibulaire",
+        "labyrinthe",
+        "Ménière"
+      ],
+      "why": "Patients present vertigo to a generalist, a cardiologist and a neurologist before reaching ENT."
+    },
+    {
+      "specialty": "otolaryngology",
+      "question": "Des sifflements dans l'oreille : est-ce que ça se soigne ?",
+      "question_ar": "طنين في الأذن: هل له علاج؟",
+      "terms": [
+        "acouphène",
+        "acouphènes",
+        "surdité",
+        "cochlée"
+      ],
+      "why": "Common, distressing, and surrounded by claims of cures that do not exist."
     }
   ]
 }
