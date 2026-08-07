@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 import time
@@ -405,7 +406,21 @@ def parse_draft(raw: str) -> dict:
     return json.loads(text[start : end + 1], strict=False)
 
 
-def complete_with_backoff(llm, *, attempts: int = 4, **kwargs) -> str:
+"""Seconds to leave between calls, so the tier is never saturated to begin with.
+
+Each request carries four textbook passages and costs roughly 5,500 tokens
+against a free tier of 12,000 per minute — two calls a minute, no more. Firing
+back-to-back and retrying on 429 does not work: the limit stays saturated, every
+attempt lands inside the same exhausted window, and a run loses a third of its
+topics to a ceiling it created. Pacing the calls apart is what actually gets a
+long run through; the backoff below is then only for the times we misjudge.
+"""
+MIN_CALL_INTERVAL = float(os.environ.get("SEHATY_LLM_INTERVAL", "30"))
+
+_last_call = 0.0
+
+
+def complete_with_backoff(llm, *, attempts: int = 8, **kwargs) -> str:
     """One completion, waiting out the provider's rate limit rather than losing the topic.
 
     Each request here carries four textbook passages, so it costs around 5,500
@@ -417,8 +432,13 @@ def complete_with_backoff(llm, *, attempts: int = 4, **kwargs) -> str:
     when it is offered rather than guessing a backoff that is either wasteful or
     still too early.
     """
+    global _last_call
     for attempt in range(attempts):
         try:
+            gap = MIN_CALL_INTERVAL - (time.monotonic() - _last_call)
+            if gap > 0:
+                time.sleep(gap)
+            _last_call = time.monotonic()
             return llm.complete(**kwargs)
         except Exception as error:  # noqa: BLE001 - retried below, re-raised at the end
             message = str(error)
