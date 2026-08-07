@@ -999,6 +999,102 @@
         "cochlée"
       ],
       "why": "Common, distressing, and surrounded by claims of cures that do not exist."
+    },
+    {
+      "specialty": "psychiatry",
+      "question": "Je dors mal depuis des mois : à partir de quand parle-t-on d'insomnie ?",
+      "question_ar": "أنام بصعوبة منذ أشهر: متى نتحدث عن الأرق؟",
+      "terms": [
+        "insomnie|insomnia",
+        "sommeil|sleep",
+        "trouble du sommeil",
+        "hypersomnie"
+      ],
+      "why": "Sleep is the complaint people bring to a pharmacist for years before bringing it to a doctor."
+    },
+    {
+      "specialty": "psychiatry",
+      "question": "Épuisé par le travail : burn-out ou dépression ?",
+      "question_ar": "منهك من العمل: احتراق وظيفي أم اكتئاب؟",
+      "terms": [
+        "epuisement professionnel|burn-out|burnout",
+        "depression",
+        "stress",
+        "trouble de ladaptation"
+      ],
+      "why": "The two are treated differently and the distinction is almost never made outside a consultation."
+    },
+    {
+      "specialty": "psychiatry",
+      "question": "Le cœur qui s'emballe sans raison : crise d'angoisse ou problème cardiaque ?",
+      "question_ar": "خفقان مفاجئ بدون سبب: نوبة هلع أم مشكل في القلب؟",
+      "terms": [
+        "attaque de panique|panic attack",
+        "angoisse",
+        "anxiete|anxiety",
+        "trouble panique"
+      ],
+      "why": "Panic attacks send people to emergency departments convinced they are having a heart attack."
+    },
+    {
+      "specialty": "psychiatry",
+      "question": "J'évite de parler devant les gens : timidité ou phobie sociale ?",
+      "question_ar": "أتجنب الحديث أمام الناس: خجل أم رهاب اجتماعي؟",
+      "terms": [
+        "phobie sociale|social phobia",
+        "anxiete sociale",
+        "phobie|phobia",
+        "evitement"
+      ],
+      "why": "Treated as a personality trait when it is a treatable condition that shapes a working life."
+    },
+    {
+      "specialty": "psychiatry",
+      "question": "Se sentir nul en permanence : simple manque de confiance ou symptôme ?",
+      "question_ar": "الشعور الدائم بانعدام القيمة: قلة ثقة أم عرض مرضي؟",
+      "terms": [
+        "estime de soi|self-esteem",
+        "devalorisation",
+        "depression",
+        "culpabilite"
+      ],
+      "why": "Persistent worthlessness is a diagnostic criterion, not a character flaw, and almost nobody knows that."
+    },
+    {
+      "specialty": "psychiatry",
+      "question": "Je n'arrive plus à me concentrer : est-ce l'attention ou l'humeur ?",
+      "question_ar": "لم أعد أستطيع التركيز: مشكل انتباه أم مزاج؟",
+      "terms": [
+        "attention|concentration",
+        "tdah|adhd",
+        "trouble de lattention",
+        "depression"
+      ],
+      "why": "Concentration loss is read as a personal failing when it is a symptom of several treatable things."
+    },
+    {
+      "specialty": "psychiatry",
+      "question": "Deuil ou dépression : comment faire la différence ?",
+      "question_ar": "حداد أم اكتئاب: كيف نفرق بينهما؟",
+      "terms": [
+        "deuil|grief|bereavement",
+        "depression",
+        "humeur|mood",
+        "trouble de ladaptation"
+      ],
+      "why": "Grief that has become depression is the case where waiting it out stops being the right advice."
+    },
+    {
+      "specialty": "psychiatry",
+      "question": "Le cannabis détend-il vraiment, ou aggrave-t-il l'anxiété ?",
+      "question_ar": "هل الحشيش يريح فعلا أم يزيد القلق؟",
+      "terms": [
+        "cannabis",
+        "addiction|dependance",
+        "psychose|psychosis",
+        "anxiete|anxiety"
+      ],
+      "why": "Widely used in Morocco and widely believed to be calming; the psychiatric literature says otherwise."
     }
   ]
 }
