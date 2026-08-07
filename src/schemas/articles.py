@@ -80,3 +80,28 @@ class ArticleEventIn(BaseModel):
     source: str | None = None
     # Set on a DOCTOR_CLICK: which validating doctor was followed.
     doctor_id: int | None = None
+
+
+class ArticleEditIn(BaseModel):
+    """A partial edit from the admin console.
+
+    Every field is optional and omitting one means "leave it alone", which is
+    what lets the editor save a title fix without resending an entire article
+    and silently overwriting a field it never showed.
+
+    Sending `summary: ""` clears the summary; omitting `summary` keeps it. The
+    two are different requests and the console has to mean the one it sends.
+
+    Changing `body` costs the article its doctors' validations — the controller
+    drops them, because a signature on words that have since changed is worse
+    than no signature at all.
+    """
+
+    title: str | None = None
+    summary: str | None = None
+    body: str | None = None
+    locale: str | None = None
+    specialty_slug: str | None = None
+    topic_key: str | None = None
+    images: list[ImageIn] | None = None
+    sources: list[SourceIn] | None = None

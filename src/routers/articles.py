@@ -18,6 +18,7 @@ from sehaty.db import User, UserRole
 
 from deps import require_roles
 from schemas.articles import (
+    ArticleEditIn,
     ArticleEventIn,
     ArticleReviewIn,
     ArticleValidateIn,
@@ -192,3 +193,70 @@ def review_article(
 ) -> ArticleView:
     """Publish it, or turn it down with a reason the author can act on."""
     return ArticleController.review(article_id, approve=body.approve, note=body.note)
+
+
+@router.get("/admin/articles", response_model=list[ArticleView])
+def list_articles_admin(
+    status: str | None = Query(default=None),
+    locale: str | None = Query(default=None),
+    specialty_slug: str | None = Query(default=None),
+    search: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    _admin: User = Depends(_require_admin),
+) -> list[ArticleView]:
+    """Everything, filterable, newest first.
+
+    `/admin/articles/pending` answers "what is waiting on a human"; the editor
+    needs the other question, including drafts nobody has looked at and articles
+    that were published months ago.
+    """
+    return ArticleController.list_admin(
+        status=status,
+        locale=locale,
+        specialty_slug=specialty_slug,
+        search=search,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.patch("/admin/articles/{article_id}", response_model=ArticleView)
+def edit_article(
+    article_id: int,
+    body: ArticleEditIn,
+    _admin: User = Depends(_require_admin),
+) -> ArticleView:
+    """Change an article. Omitted fields are left alone.
+
+    PATCH rather than PUT deliberately: the console edits one pane at a time,
+    and a PUT would make saving a corrected title resend — and risk clobbering —
+    a body the editor never opened.
+
+    Changing the body drops the doctors' validations. See `ArticleController.edit`.
+    """
+    return ArticleController.edit(
+        article_id,
+        title=body.title,
+        summary=body.summary,
+        body=body.body,
+        locale=body.locale,
+        specialty_slug=body.specialty_slug,
+        topic_key=body.topic_key,
+        images=[i.model_dump() for i in body.images] if body.images is not None else None,
+        sources=[s.model_dump() for s in body.sources] if body.sources is not None else None,
+    )
+
+
+@router.delete("/admin/articles/{article_id}", status_code=204)
+def delete_article(
+    article_id: int,
+    _admin: User = Depends(_require_admin),
+) -> None:
+    """Remove an article for good.
+
+    Admin-only and unguarded by status: a published article's URL may be
+    indexed and linked, and deleting it turns that into a 404. That is a call
+    for whoever is holding the console, not one this endpoint should refuse.
+    """
+    ArticleController.delete(article_id)
