@@ -46,6 +46,7 @@ import argparse
 import json
 import re
 import sys
+import time
 import unicodedata
 import urllib.error
 import urllib.request
@@ -294,6 +295,12 @@ def longest_shared_run(draft: str, sources: list[str]) -> int:
     return longest
 
 
+SYSTEM = (
+    "You write patient-facing health articles for a Moroccan health directory, "
+    "strictly from the passages you are given. Return only the JSON object the "
+    "instructions ask for, with no commentary around it."
+)
+
 PROMPT = """You are writing for Sehaty, a Moroccan health directory read by patients,
 not by doctors.
 
@@ -391,7 +398,39 @@ def parse_draft(raw: str) -> dict:
     start, end = text.find("{"), text.rfind("}")
     if start == -1 or end == -1:
         raise ValueError("no JSON object in the model's reply")
-    return json.loads(text[start : end + 1])
+    # strict=False allows raw newlines inside string values. The body *is*
+    # markdown, so it arrives full of them; strict parsing rejected every draft
+    # with "Invalid control character" and made a formatting detail look like a
+    # model failure.
+    return json.loads(text[start : end + 1], strict=False)
+
+
+def complete_with_backoff(llm, *, attempts: int = 4, **kwargs) -> str:
+    """One completion, waiting out the provider's rate limit rather than losing the topic.
+
+    Each request here carries four textbook passages, so it costs around 5,500
+    tokens against a free tier of 12,000 per minute — roughly two topics a
+    minute, and a run of fifty will hit the ceiling repeatedly. Treating that as
+    a failure threw away topics whose only problem was arriving too quickly.
+
+    The provider states how long to wait ("try again in 24.22s"), so honour that
+    when it is offered rather than guessing a backoff that is either wasteful or
+    still too early.
+    """
+    for attempt in range(attempts):
+        try:
+            return llm.complete(**kwargs)
+        except Exception as error:  # noqa: BLE001 - retried below, re-raised at the end
+            message = str(error)
+            if "429" not in message and "rate limit" not in message.lower():
+                raise
+            if attempt == attempts - 1:
+                raise
+            stated = re.search(r"try again in ([\d.]+)s", message)
+            wait = float(stated.group(1)) + 1 if stated else 20 * (attempt + 1)
+            print(f"      · rate limited, waiting {wait:.0f}s", file=sys.stderr)
+            time.sleep(wait)
+    raise RuntimeError("unreachable")
 
 
 def post_article(base: str, token: str, payload: dict) -> dict:
@@ -448,7 +487,16 @@ def main() -> int:
 
         for locale in LOCALES:
             try:
-                raw = llm.complete(build_prompt(topic["question"], locale, passages))
+                raw = complete_with_backoff(
+                    llm,
+                    system=SYSTEM,
+                    user=build_prompt(topic["question"], locale, passages),
+                    # The default 700 cannot hold a 350-500 word article plus its
+                    # JSON wrapper and two image briefs; Arabic runs longer still.
+                    # A truncated reply fails as unparseable JSON, which reads
+                    # like a model problem and is not one.
+                    max_tokens=2500,
+                )
                 draft = parse_draft(raw)
             except Exception as error:  # noqa: BLE001 - one topic must not end the run
                 print(f"      ! {locale}: {error}", file=sys.stderr)
